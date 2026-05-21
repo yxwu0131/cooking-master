@@ -10,7 +10,10 @@ RUN corepack enable && corepack prepare pnpm@11.1.2 --activate
 # 注意：不复制 .npmrc —— 本地 .npmrc 写死了 Windows store-dir 路径，进 Linux 容器会让 pnpm install 崩
 # peer 依赖设置用 pnpm 默认（auto-install-peers=true / strict-peer-dependencies=false），--frozen-lockfile 不受影响
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-RUN pnpm install --frozen-lockfile
+# pnpm 11 默认拦截依赖 build 脚本并以 ERR_PNPM_IGNORED_BUILDS 退出 1（onlyBuiltDependencies 在纯净容器里未生效）。
+# 先装包（拦截不致命），再显式 rebuild 需要原生构建的包（prisma 引擎 / esbuild / sharp 等）。
+RUN pnpm install --frozen-lockfile --config.strict-peer-dependencies=false; \
+    pnpm rebuild @prisma/client @prisma/engines prisma esbuild sharp unrs-resolver
 
 # 阶段 2: 构建
 FROM node:22-alpine AS builder
