@@ -2,6 +2,62 @@
 
 本指南假设：极空间 ZAPro NAS、Docker Compose、域名 `dorianweb.com`。
 
+---
+
+## ⭐ 实战路径（最终采用）：GHCR 镜像 + Cloudflare Tunnel
+
+适配极空间实际情况：SSH 账号沙箱化（HOME 只读、docker 需 sudo），现有项目走 **GHCR 镜像 + watchtower 自动更新**，已有 cloudflared 隧道，端口 3000 被 `child-growth` 占用。
+
+**架构**：GitHub Actions 构建镜像推 GHCR → NAS 拉镜像跑（不在 NAS 构建）→ web 暴露 `3001` → 复用现有 cloudflared 隧道 → `cook.dorianweb.com`。
+
+### A. 镜像（已自动化）
+推 `main` 触发 `.github/workflows/docker-build.yml`，构建并推送：
+- `ghcr.io/yxwu0131/cooking-master:latest`（web 运行镜像）
+- `ghcr.io/yxwu0131/cooking-master:migrate`（一次性建表+种子）
+
+首次构建后，到 GitHub → 该 package → Package settings → 设为 **Public**（或在 NAS `sudo docker login ghcr.io`）。
+
+### B. NAS 上部署（SSH + sudo）
+```bash
+# 1. 选一个持久化可写目录（用 sudo df -h 找数据卷，例如 /share/Container）
+sudo mkdir -p /share/Container/cooking-master && cd /share/Container/cooking-master
+
+# 2. 放 docker-compose.prod.yml（从仓库拷或 curl 下载 raw 文件）
+sudo curl -fsSL -o docker-compose.prod.yml \
+  https://raw.githubusercontent.com/yxwu0131/cooking-master/main/docker-compose.prod.yml
+
+# 3. 写 .env（POSTGRES_PASSWORD/AUTH_SECRET 用 openssl 生成，DEEPSEEK_API_KEY 填你的）
+sudo tee .env >/dev/null <<EOF
+POSTGRES_USER=cooking
+POSTGRES_PASSWORD=$(openssl rand -base64 24 | tr -d '/+=')
+POSTGRES_DB=cooking_master
+AUTH_SECRET=$(openssl rand -base64 32)
+AUTH_URL=https://cook.dorianweb.com
+NEXT_PUBLIC_APP_URL=https://cook.dorianweb.com
+DEEPSEEK_API_KEY=sk-把你的key填这里
+DEEPSEEK_API_BASE=https://api.deepseek.com/v1
+DEEPSEEK_MODEL=deepseek-chat
+EOF
+
+# 4. 拉镜像 + 起服务
+sudo docker compose -f docker-compose.prod.yml pull
+sudo docker compose -f docker-compose.prod.yml up -d
+
+# 5. 验证：migrate 日志应见「214 食材/68 菜/✅完成」后 Exited(0)；web 本地通
+sudo docker compose -f docker-compose.prod.yml logs migrate
+curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:3001/login   # 期望 200
+```
+
+### C. Cloudflare 加子域名路由（复用现有隧道）
+Zero Trust → Networks → Tunnels → 现有隧道 → Public Hostname → Add：
+`cook` . `dorianweb.com` | Type `HTTP` | URL `<NAS局域网IP>:3001`
+
+保存后 `https://cook.dorianweb.com` 即通（DNS+TLS 全由 Cloudflare 托管）。
+
+---
+
+## 以下为通用/备选方法（本地构建、Caddy 自签证书等），实战未采用，留作参考
+
 ## 推荐路径：先局域网（LAN）跑通，再上公网域名
 
 部署分两个 profile：

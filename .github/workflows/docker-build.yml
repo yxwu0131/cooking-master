@@ -3,6 +3,11 @@ name: build-and-push
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - "**/*.md"
+      - ".claude/**"
+      - "DEPLOY.md"
+      - "NOTES.md"
   workflow_dispatch:
 
 jobs:

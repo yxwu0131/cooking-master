@@ -363,3 +363,31 @@
 - **坑中坑**：compose 变量插值发生在 profile 过滤**之前**，所以被 profile 排除的 caddy 服务里的 `LETSENCRYPT_EMAIL:?required` 仍会在 LAN `up` 时报错 → 改成 `${LETSENCRYPT_EMAIL:-}` 默认空 + 文档要求 public 时填
 - **教训**：用 profile 隔离可选服务时，该服务里的 `${VAR:?}` 必填变量要降级成带默认值，否则 LAN 启动会被公网专用变量卡住
 
+---
+
+## 2026-05-22 极空间实战部署（GHCR 镜像 + Cloudflare Tunnel + 两个镜像构建坑）
+
+### 决策 25：弃用 NAS 本地构建，改 GitHub Actions 构建推 GHCR
+- **背景**：极空间 SSH 账号沙箱化（`HOME=/home` 只读、仅 `/tmp` 可写、docker 必须 sudo、无免密 sudo），无法在 NAS 上 clone 代码到持久目录 + `docker compose build`。且现有项目（`child-growth`）本就是 **GHCR 镜像 + watchtower 自动更新**模式，端口 3000 已被它占用。
+- **做法**：`.github/workflows/docker-build.yml` 推 main 自动构建：`runner` 目标→`ghcr.io/yxwu0131/cooking-master:latest`（web）、`builder` 目标→`:migrate`（含 prisma CLI+tsx，跑 db push+seed）。`docker-compose.prod.yml` 拉镜像跑 db+migrate+web，web 暴露 **3001**（避开 3000），复用现有 cloudflared 隧道，Cloudflare 后台加 `cook.dorianweb.com → NAS-IP:3001`，TLS 全托管，不用 Caddy。
+- **教训**：NAS 沙箱严的环境，别跟它硬刚本地构建；顺着它已有的「镜像仓库+watchtower」习惯走，CI 出镜像、NAS 只拉，最省心。
+
+### 坑 15：本地 .npmrc 的 Windows store-dir 路径毒化 Docker 构建
+- **现象**：CI 构建 runner 镜像第一次失败，定位到 `pnpm install` 阶段。
+- **根因**：`.npmrc` 里有 `store-dir=C:/Users/Administrator/AppData/Local/pnpm/store/v11`（坑 2 留下的本机配置），Dockerfile `COPY .npmrc* ./` 把它带进 Linux 容器，pnpm 拿 Windows 路径当 store 直接崩。
+- **解法**：Dockerfile 不再 COPY `.npmrc`，并把 `.npmrc` 加进 `.dockerignore`。peer 设置用 pnpm 默认值即可，`--frozen-lockfile` 不受影响。
+- **教训**：凡是写了绝对路径/本机专属配置的文件（.npmrc、本地 .env），都要确保不被带进镜像。
+
+### 坑 16：pnpm 11 在纯净容器里 ERR_PNPM_IGNORED_BUILDS 退出 1
+- **现象**：修了 .npmrc 后仍在 `pnpm install --frozen-lockfile` 失败：`[ERR_PNPM_IGNORED_BUILDS] Ignored build scripts: @prisma/client, @prisma/engines, esbuild, prisma, sharp, unrs-resolver`，退出 1。
+- **根因**：pnpm 11 默认拦截依赖的 build 脚本并以错误退出。`onlyBuiltDependencies`（package.json 和 pnpm-workspace.yaml 都写了）在纯净容器的 `--frozen-lockfile` 安装里**没生效**（本机能装是因为 store/node_modules 已构建过、审批被记住）。lockfile 的 `settings:` 段也没记录构建审批。
+- **解法**：Dockerfile 改成 `RUN pnpm install --frozen-lockfile ...; pnpm rebuild @prisma/client @prisma/engines prisma esbuild sharp unrs-resolver`——用 `;` 让安装阶段的拦截不致命，再显式 `pnpm rebuild` 把原生包（prisma 引擎/esbuild/sharp）真正构建出来。本地 deps 阶段验证通过。顺手删了 pnpm-workspace.yaml 里 pnpm 自动塞的非法 `allowBuilds` 占位块。
+- **教训**：pnpm 10/11 的 build-script 审批机制在 CI/Docker 纯净环境经常不认 `onlyBuiltDependencies`；最稳的是装完显式 `pnpm rebuild <需要原生构建的包>`，别指望审批配置在容器里自动生效。
+- **附**：本地 `docker build` 还会遇到 npm registry 拉包超时（`error (23) operation aborted`），那是本机 sing-box 代理问题（坑 7 同源），GitHub Actions 干净网络无此问题。
+
+### 坑 17：pnpm 布局下 Next standalone 不带 prisma 生成产物
+- **现象**：deps/builder 都通过、`next build` 成功后，runner 阶段 `COPY --from=builder /app/node_modules/.prisma` 报 `not found`。
+- **根因**：pnpm 不把包平铺到顶层 `node_modules`，prisma generate 把「生成的 client + 查询引擎」写进 `node_modules/.pnpm/@prisma+client@<版本+hash>/node_modules/.prisma/`。Next standalone 只 trace 了 `@prisma/client` 包本身（`.next/standalone/node_modules/@prisma/client`），没带上那个 `.prisma`（含 `libquery_engine-linux-musl-openssl-3.0.x.so.node`）。顶层 `node_modules/.prisma` 和 `node_modules/@prisma/client` 在 pnpm 下都不存在 → 原 Dockerfile 的 npm 式拷贝路径全错。
+- **解法**：runner 阶段用 glob 从 .pnpm 路径补进 standalone：`COPY --from=builder /app/node_modules/.pnpm/@prisma+client@*/node_modules/.prisma ./node_modules/.prisma`（`*` 匹配版本+hash 段，不跨 `/`）。删掉原来对 `node_modules/.prisma` 和 `@prisma/client` 的两条显式拷贝（后者 standalone 已自带）。验证：`docker run runner node -e "new (require('@prisma/client').PrismaClient)()"` 打印 client OK、引擎可解析。
+- **教训**：pnpm + Prisma + Next standalone 三者组合，生成的 client/引擎不会自动进 standalone，必须从 `.pnpm/@prisma+client@*/node_modules/.prisma` 手动补；别套用 npm 的 `node_modules/.prisma` 顶层路径。
+
