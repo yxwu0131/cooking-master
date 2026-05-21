@@ -7,7 +7,9 @@ WORKDIR /app
 # 启用 corepack 拿到 pnpm
 RUN corepack enable && corepack prepare pnpm@11.1.2 --activate
 
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc* ./
+# 注意：不复制 .npmrc —— 本地 .npmrc 写死了 Windows store-dir 路径，进 Linux 容器会让 pnpm install 崩
+# peer 依赖设置用 pnpm 默认（auto-install-peers=true / strict-peer-dependencies=false），--frozen-lockfile 不受影响
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 
 # 阶段 2: 构建
