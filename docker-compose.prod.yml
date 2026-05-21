@@ -1,0 +1,83 @@
+# 生产部署（极空间 NAS）：直接拉 GHCR 镜像，不在 NAS 上构建
+# 用法（NAS 上，需要 sudo）：
+#   sudo docker compose -f docker-compose.prod.yml pull
+#   sudo docker compose -f docker-compose.prod.yml up -d
+#
+# 镜像由 GitHub Actions 自动构建推送：
+#   ghcr.io/yxwu0131/cooking-master:latest   ← web 运行镜像
+#   ghcr.io/yxwu0131/cooking-master:migrate  ← 一次性建表+种子
+#
+# web 暴露在宿主 3001（3000 已被 child-growth 占用）。
+# 对外：Cloudflare Tunnel 加 public hostname → http://<NAS-IP>:3001。
+
+name: cooking-master
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: cooking-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-cooking}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:-cooking_master}
+      TZ: Asia/Shanghai
+      PGTZ: Asia/Shanghai
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cooking} -d ${POSTGRES_DB:-cooking_master}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - cooking-net
+
+  # 一次性：建表（db push）+ 灌种子（食材库 + 菜品库），跑完退出
+  migrate:
+    image: ghcr.io/yxwu0131/cooking-master:migrate
+    container_name: cooking-migrate
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-cooking}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-cooking_master}?schema=public
+      TZ: Asia/Shanghai
+    command: >
+      sh -c "node node_modules/prisma/build/index.js db push --skip-generate &&
+      node node_modules/tsx/dist/cli.mjs prisma/seed.ts"
+    networks:
+      - cooking-net
+
+  web:
+    image: ghcr.io/yxwu0131/cooking-master:latest
+    container_name: cooking-web
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-cooking}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-cooking_master}?schema=public
+      AUTH_SECRET: ${AUTH_SECRET:?AUTH_SECRET is required (at least 32 chars)}
+      AUTH_URL: ${AUTH_URL:-https://cook.dorianweb.com}
+      AUTH_TRUST_HOST: "true"
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:?DEEPSEEK_API_KEY is required}
+      DEEPSEEK_API_BASE: ${DEEPSEEK_API_BASE:-https://api.deepseek.com/v1}
+      DEEPSEEK_MODEL: ${DEEPSEEK_MODEL:-deepseek-chat}
+      IMAGES_DIR: /app/data/images
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://cook.dorianweb.com}
+      TZ: Asia/Shanghai
+    volumes:
+      - ./data/images:/app/data/images
+    ports:
+      - "3001:3000"
+    networks:
+      - cooking-net
+
+networks:
+  cooking-net:
+    driver: bridge

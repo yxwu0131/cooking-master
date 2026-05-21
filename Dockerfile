@@ -24,6 +24,8 @@ COPY . .
 RUN pnpm exec prisma generate
 
 ENV NEXT_TELEMETRY_DISABLED=1
+# 构建期占位 DATABASE_URL（next build 不会真连库；运行时由 compose 注入覆盖）
+ENV DATABASE_URL="postgresql://build:build@localhost:5432/build?schema=public"
 RUN pnpm build
 
 # 阶段 3: 运行时（最小镜像）
