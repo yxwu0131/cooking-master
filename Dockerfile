@@ -53,10 +53,11 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
-# Prisma 运行时需要 schema 和 query engine
+# Prisma：Next standalone 已 trace @prisma/client 包，但 pnpm 布局下「生成的 client + 查询引擎」
+# 在 .pnpm/@prisma+client@.../node_modules/.prisma 里、没被 trace 进 standalone，需手动补齐
+# （否则运行时报 query engine / .prisma/client not found，见坑 17）
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma/client ./node_modules/@prisma/client
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.pnpm/@prisma+client@*/node_modules/.prisma ./node_modules/.prisma
 
 USER nextjs
 EXPOSE 3000
