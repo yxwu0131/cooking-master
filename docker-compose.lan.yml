@@ -1,0 +1,14 @@
+# 局域网优先部署 override
+# 用法：docker compose -f docker-compose.yml -f docker-compose.lan.yml up -d
+#
+# 跳过 Caddy/域名/HTTPS（caddy 在 public profile 下，默认不启动），
+# 直接把 web 暴露在 NAS 的 3000 端口，局域网用 http://<NAS局域网IP>:3000 访问。
+# 等以后有了域名 + 公网 IP，再用 `docker compose --profile public up -d` 加上 Caddy + TLS。
+#
+# 注意：.env 里 AUTH_URL / NEXT_PUBLIC_APP_URL 这时要填 http://<NAS局域网IP>:3000
+# （不能再是 https://dorianweb.com，否则登录回跳和绝对链接会指向错误地址）。
+
+services:
+  web:
+    ports:
+      - "3000:3000"

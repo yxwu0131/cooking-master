@@ -1,0 +1,23 @@
+# 备选：给本项目新建一条独立 Cloudflare Tunnel（当无法复用现有隧道时）
+# 用法：docker compose -f docker-compose.yml -f docker-compose.lan.yml -f docker-compose.cloudflared.yml up -d
+#
+# 前置：
+# 1. Cloudflare Zero Trust → Networks → Tunnels → Create a tunnel（Cloudflared 类型）
+#    创建后拿到 tunnel token，填到 .env 的 CF_TUNNEL_TOKEN
+# 2. 在该隧道的 Public Hostname 里加：cook.dorianweb.com → HTTP → http://web:3000
+#    （cloudflared 与 web 同在 cooking-net 网络，可直接用容器名 web:3000）
+#
+# 这样 cook.dorianweb.com 的 DNS + TLS 全由 Cloudflare 托管，无需公网 IP / 端口转发 / Caddy。
+
+services:
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cooking-cloudflared
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CF_TUNNEL_TOKEN:?CF_TUNNEL_TOKEN is required for cloudflared}
+    depends_on:
+      - web
+    networks:
+      - cooking-net

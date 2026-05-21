@@ -1,0 +1,104 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* 暖色"食欲"主题：奶油底 + 番茄橙主色 + 香草绿点缀 + 暖棕文字 */
+  --background: oklch(0.992 0.008 80);
+  --foreground: oklch(0.27 0.025 55);
+  --card: oklch(1 0.004 80);
+  --card-foreground: oklch(0.27 0.025 55);
+  --popover: oklch(1 0.004 80);
+  --popover-foreground: oklch(0.27 0.025 55);
+  --primary: oklch(0.65 0.18 42);
+  --primary-foreground: oklch(0.99 0.01 80);
+  --secondary: oklch(0.955 0.022 70);
+  --secondary-foreground: oklch(0.36 0.05 50);
+  --muted: oklch(0.965 0.014 75);
+  --muted-foreground: oklch(0.52 0.03 55);
+  --accent: oklch(0.94 0.045 62);
+  --accent-foreground: oklch(0.38 0.08 48);
+  --destructive: oklch(0.585 0.215 27);
+  --destructive-foreground: oklch(0.99 0.01 80);
+  --border: oklch(0.9 0.018 72);
+  --input: oklch(0.9 0.018 72);
+  --ring: oklch(0.65 0.18 42);
+  /* 香草绿：用于"新鲜/已有/健康"等正向语义 */
+  --fresh: oklch(0.62 0.13 150);
+  --fresh-foreground: oklch(0.99 0.01 150);
+  --radius: 0.75rem;
+}
+
+.dark {
+  /* 暖炭褐底，避免纯黑死板 */
+  --background: oklch(0.2 0.018 50);
+  --foreground: oklch(0.95 0.012 80);
+  --card: oklch(0.245 0.02 52);
+  --card-foreground: oklch(0.95 0.012 80);
+  --popover: oklch(0.245 0.02 52);
+  --popover-foreground: oklch(0.95 0.012 80);
+  --primary: oklch(0.7 0.17 45);
+  --primary-foreground: oklch(0.2 0.03 45);
+  --secondary: oklch(0.32 0.025 52);
+  --secondary-foreground: oklch(0.95 0.012 80);
+  --muted: oklch(0.32 0.022 52);
+  --muted-foreground: oklch(0.72 0.025 65);
+  --accent: oklch(0.36 0.04 50);
+  --accent-foreground: oklch(0.95 0.012 80);
+  --destructive: oklch(0.68 0.19 25);
+  --destructive-foreground: oklch(0.98 0.01 80);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 16%);
+  --ring: oklch(0.7 0.17 45);
+  --fresh: oklch(0.68 0.13 150);
+  --fresh-foreground: oklch(0.18 0.02 150);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-fresh: var(--fresh);
+  --color-fresh-foreground: var(--fresh-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --font-sans: var(--font-sans);
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  body {
+    background-color: var(--background);
+    /* 顶部一抹暖橙光晕，增加食欲温度感 */
+    background-image: radial-gradient(
+      1200px 480px at 50% -10%,
+      oklch(0.65 0.18 42 / 0.07),
+      transparent 70%
+    );
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    color: var(--foreground);
+    font-family: var(--font-sans), system-ui, -apple-system, "Segoe UI",
+      "PingFang SC", "Microsoft YaHei", sans-serif;
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm --version)",
+      "Bash(npm install *)",
+      "Bash(pnpm create *)",
+      "Bash(node node_modules/next/dist/bin/next dev --port 3000)",
+      "Bash(/c/Users/Administrator/AppData/Roaming/npm/agent-browser.cmd --cdp 9222 eval 'location.reload\\(\\)')",
+      "Bash(/c/Users/Administrator/AppData/Roaming/npm/agent-browser.cmd --cdp 9222 eval 'Array.from\\(document.querySelectorAll\\(\"button\"\\)\\).map\\(b=>b.textContent.trim\\(\\)\\).filter\\(t=>t.length>0\\)')",
+      "Bash(/c/Users/Administrator/AppData/Roaming/npm/agent-browser.cmd --cdp 9222 eval 'document.body.innerText.slice\\(0, 2500\\)')",
+      "Bash(/c/Users/Administrator/AppData/Roaming/npm/agent-browser.cmd --cdp 9222 eval '\\(\\(\\)=>{const btns=Array.from\\(document.querySelectorAll\\(\"button\"\\)\\).filter\\(b=>b.textContent.trim\\(\\)===\"采用这个方案\"\\);btns[0]?.dispatchEvent\\(new MouseEvent\\(\"click\",{bubbles:true}\\)\\);return btns.length;}\\)\\(\\)')",
+      "Bash(docker exec cooking-master-db *)",
+      "Bash(/c/Users/Administrator/AppData/Roaming/npm/agent-browser.cmd --cdp 9222 eval 'document.body.innerText.slice\\(0,500\\)')",
+      "Bash(/c/Users/Administrator/AppData/Roaming/npm/agent-browser.cmd --cdp 9222 eval location.pathname)",
+      "Bash(/c/Users/Administrator/AppData/Roaming/npm/agent-browser.cmd --cdp 9222 eval 'document.body.innerText.slice\\(0,600\\)')",
+      "Bash(/c/Users/Administrator/AppData/Roaming/npm/agent-browser.cmd --cdp 9222 eval '\\(\\(\\)=>{const btns=Array.from\\(document.querySelectorAll\\(\"button\"\\)\\);const btn=btns.find\\(b=>b.textContent.trim\\(\\)===\"采购清单\"\\);btn?.dispatchEvent\\(new MouseEvent\\(\"click\",{bubbles:true}\\)\\);return !!btn;}\\)\\(\\)')",
+      "Bash(/c/Users/Administrator/AppData/Roaming/npm/agent-browser.cmd --cdp 9222 eval 'Array.from\\(document.querySelectorAll\\(\"button,a,[role=tab]\"\\)\\).filter\\(el=>el.textContent.trim\\(\\)===\"采购清单\"\\).map\\(el=>\\({tag:el.tagName,role:el.getAttribute\\(\"role\"\\),aria:el.getAttribute\\(\"aria-selected\"\\),outerHTML:el.outerHTML.slice\\(0,150\\)}\\)\\)')",
+      "Bash(/c/Users/Administrator/AppData/Roaming/npm/agent-browser.cmd --cdp 9222 eval '\\(\\(\\)=>{const tab=document.querySelector\\(\"[role=tab][aria-controls*=\\\\\"shopping\\\\\"]\"\\);if\\(!tab\\)return\"not found\";tab.dispatchEvent\\(new PointerEvent\\(\"pointerdown\",{bubbles:true,cancelable:true}\\)\\);tab.dispatchEvent\\(new MouseEvent\\(\"click\",{bubbles:true}\\)\\);return tab.getAttribute\\(\"data-state\"\\);}\\)\\(\\)')",
+      "Bash(/c/Users/Administrator/AppData/Roaming/npm/agent-browser.cmd --cdp 9222 eval '\\(\\(\\)=>{ *)",
+      "Bash(/c/Users/Administrator/AppData/Roaming/npm/agent-browser.cmd --cdp 9222 eval '\\(function\\(\\){var btn=Array.from\\(document.querySelectorAll\\(\"button\"\\)\\).find\\(function\\(b\\){return b.textContent.trim\\(\\)===\"开始做饭\"}\\);if\\(btn\\){btn.dispatchEvent\\(new MouseEvent\\(\"click\",{bubbles:true}\\)\\);return \"clicked\";}return \"not found\";}\\)\\(\\)')",
+      "Bash(/c/Users/Administrator/AppData/Roaming/npm/agent-browser.cmd --cdp 9222 eval '\\(function\\(\\){var btn=Array.from\\(document.querySelectorAll\\(\"button\"\\)\\).find\\(function\\(b\\){return b.textContent.trim\\(\\)===\"做饭完成\"}\\);if\\(btn\\){btn.dispatchEvent\\(new MouseEvent\\(\"click\",{bubbles:true}\\)\\);return \"clicked\";}return \"not found\";}\\)\\(\\)')",
+      "Bash(/c/Users/Administrator/AppData/Roaming/npm/agent-browser.cmd --cdp 9222 open http://localhost:3000/feedback)",
+      "Bash(/c/Users/Administrator/AppData/Roaming/npm/agent-browser.cmd --cdp 9222 open http://localhost:3000/cook/cmpcr1cfm000ouay0600fvp7f)"
+    ]
+  }
+}

@@ -1,0 +1,723 @@
+// 厨神 · 家庭做饭规划系统 · 数据模型
+// 设计要点：
+// - familyId 是业务数据的全局租户键，所有业务表必带
+// - JSONB 字段（口味/标志/步骤）保留灵活性，关系字段保证一致性
+// - 历史快照：菜单/采购清单/做饭计划确认后冻结，主数据后续修改不影响历史
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearchPostgres"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// 一、账号与家庭（Auth.js v5 兼容）
+// ============================================================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime?
+  name          String?
+  image         String?
+  passwordHash  String? // Credentials provider 用
+  role          UserRole  @default(MEMBER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  familyId String?
+  family   Family? @relation(fields: [familyId], references: [id], onDelete: SetNull)
+
+  familyMember FamilyMember? @relation("UserToFamilyMember")
+  accounts     Account[]
+  sessions     Session[]
+
+  createdWishes   Wish[]         @relation("WishCreator")
+  cookingSessions MealSession[]  @relation("SessionChef")
+  feedbacks       Feedback[]     @relation("FeedbackAuthor")
+  mealRequests   MealRequest[]  @relation("RequestAuthor")
+
+  @@index([familyId])
+}
+
+enum UserRole {
+  ADMIN
+  CHEF // 厨师（拥有菜单最终决定权）
+  MEMBER // 普通家庭成员
+}
+
+model Family {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users            User[]
+  members          FamilyMember[]
+  preference       FamilyPreference?
+  kitchen          KitchenProfile?
+  inventory        Inventory[]
+  familyDishes     FamilyDish[]
+  wishes           Wish[]
+  mealSessions     MealSession[]
+  inviteCodes      InviteCode[]
+}
+
+model InviteCode {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  familyId  String
+  family    Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  createdBy String
+  expiresAt DateTime
+  usedAt    DateTime?
+  usedBy    String?
+  createdAt DateTime @default(now())
+
+  @@index([familyId])
+}
+
+// Auth.js v5 必备：账号、会话
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ============================================================
+// 二、家庭档案：成员、口味、厨房
+// ============================================================
+
+model FamilyMember {
+  id        String   @id @default(cuid())
+  familyId  String
+  family    Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  userId    String?  @unique // 可空：未注册的小孩/老人也是成员
+  user      User?    @relation("UserToFamilyMember", fields: [userId], references: [id], onDelete: SetNull)
+
+  name        String
+  ageGroup    AgeGroup
+  birthYear   Int?
+  isChild     Boolean  @default(false)
+  isElder     Boolean  @default(false)
+  isGuest     Boolean  @default(false)
+
+  // 口味档案：JSON 结构，例如 { spicyTolerance: 0-5, saltPreference: light/normal/heavy, oilPreference, ... }
+  tasteProfile Json    @default("{}")
+
+  // 不喜欢/不能吃的食材名称数组
+  dislikes     String[] @default([])
+  // 偏爱的菜品名称数组（手动输入）
+  favorites    String[] @default([])
+  // 过敏原
+  allergies    String[] @default([])
+  // 备注
+  notes        String?
+
+  // 做饭能力（仅会下厨的成员有意义，作为 chef 选中时影响推荐与时间线缓冲）
+  cookingSkill   SkillLevel? // null = 未设置 / 不下厨
+  maxComplexity  Int?        // 1-5；null = 不限
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  mealRequests MealRequest[]
+  feedbacks    Feedback[]
+
+  @@index([familyId])
+}
+
+enum AgeGroup {
+  TODDLER // 0-3
+  CHILD // 4-12
+  TEEN // 13-17
+  ADULT // 18-59
+  ELDER // 60+
+}
+
+model FamilyPreference {
+  id       String @id @default(cuid())
+  familyId String @unique
+  family   Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
+
+  // 偏好的菜系：家常/粤/川/湘/江浙/北方 等
+  cuisines String[] @default([])
+  // 口味标志：清淡/下饭/少油少盐/不辣/微辣 等
+  tasteFlags Json @default("{}")
+
+  childFriendly      Boolean  @default(false)
+  needLunchBox       Boolean  @default(false) // 是否需要适合带饭
+  healthGoals        String[] @default([]) // 减脂/高蛋白/控糖
+  weeklyMealsPattern String? // 工作日简餐+周末改善 等
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model KitchenProfile {
+  id       String @id @default(cuid())
+  familyId String @unique
+  family   Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
+
+  // 常用厨具：炒锅、汤锅、蒸锅、电饭锅、空气炸锅、烤箱 ...
+  cookware           String[] @default([])
+  stoveCount         Int      @default(2) // 灶眼数量
+  hasDishwasher      Boolean  @default(false)
+  hasRiceCooker      Boolean  @default(true)
+  hasAirFryer        Boolean  @default(false)
+  hasOven            Boolean  @default(false)
+  hasSteamer         Boolean  @default(false)
+  hasPressureCooker  Boolean  @default(false)
+
+  // 常备调料
+  commonSeasonings String[] @default([])
+  // 常备主食
+  staples          String[] @default([])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum SkillLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+// ============================================================
+// 三、食材与库存
+// ============================================================
+
+model Ingredient {
+  id       String             @id @default(cuid())
+  name     String             @unique
+  category IngredientCategory
+  unit     String // 默认单位，如 g、个、把、块
+  aliases  String[]           @default([])
+  // 超市采购区域
+  shoppingArea ShoppingArea @default(OTHER)
+  // 默认保质期天数（用来推算过期日）
+  defaultShelfLifeDays Int?
+  imageUrl String?
+  createdAt DateTime @default(now())
+
+  inventory   Inventory[]
+  shoppingItems ShoppingItem[]
+
+  @@index([category])
+}
+
+enum IngredientCategory {
+  MEAT // 肉类
+  POULTRY // 禽类
+  SEAFOOD // 水产
+  VEGETABLE // 蔬菜
+  FRUIT // 水果
+  EGG_DAIRY // 蛋奶
+  SOY // 豆制品
+  GRAIN // 主食/谷物
+  SEASONING // 调料
+  DRY_GOODS // 干货
+  OTHER
+}
+
+enum ShoppingArea {
+  VEGETABLE // 蔬菜区
+  MEAT // 肉类区
+  SEAFOOD // 水产区
+  SOY // 豆制品区
+  DRY_GOODS // 干货调料区
+  GRAIN // 主食区
+  DAIRY // 蛋奶冷藏区
+  FROZEN // 冷冻区
+  OTHER
+}
+
+model Inventory {
+  id           String         @id @default(cuid())
+  familyId     String
+  family       Family         @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  ingredientId String
+  ingredient   Ingredient     @relation(fields: [ingredientId], references: [id])
+
+  quantity   Float
+  unit       String // 实际单位（可与 ingredient.unit 不同）
+  location   StorageLocation @default(REFRIGERATED)
+  purchasedAt DateTime?
+  expiresAt   DateTime?
+  notes       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([familyId, ingredientId])
+  @@index([familyId, expiresAt])
+}
+
+enum StorageLocation {
+  REFRIGERATED // 冷藏
+  FROZEN // 冷冻
+  ROOM_TEMP // 常温
+}
+
+// ============================================================
+// 四、菜品与菜谱
+// ============================================================
+
+model Dish {
+  id         String     @id @default(cuid())
+  name       String     @unique
+  cuisine    String? // 家常/粤/川/湘/江浙/北方
+  difficulty Int        @default(2) // 1-5
+  totalMinutes Int       @default(20) // 估算总耗时
+  servings   Int        @default(2) // 默认人数
+
+  // 标签：荤菜/素菜/汤/凉菜/主食 / 下饭/清淡 / 儿童友好 ...
+  tags          String[] @default([])
+  isSpicy       Boolean  @default(false)
+  isChildFriendly Boolean @default(false)
+  isLight       Boolean  @default(false) // 清淡
+  isHearty      Boolean  @default(false) // 下饭
+  isSoup        Boolean  @default(false)
+  isStaple      Boolean  @default(false) // 主食类
+  isVegetarian  Boolean  @default(false)
+
+  // 必须的厨具
+  requiredCookware String[] @default([])
+  // 主要食材名（用于库存匹配）
+  mainIngredients  String[] @default([])
+
+  // AI 生成时填的扩展数据
+  source     DishSource @default(SEED)
+  imageUrl   String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  recipe       Recipe?
+  familyDishes FamilyDish[]
+  menuDishes   MenuDish[]
+  wishes       Wish[]
+  feedbacks    Feedback[]
+
+  @@index([cuisine])
+}
+
+enum DishSource {
+  SEED // 预置数据
+  AI_GENERATED // AI 生成
+  USER_INPUT // 用户手动添加
+}
+
+model Recipe {
+  id     String @id @default(cuid())
+  dishId String @unique
+  dish   Dish   @relation(fields: [dishId], references: [id], onDelete: Cascade)
+
+  // 食材用量列表：[{name, quantity, unit, optional, alternatives}]
+  ingredients Json
+  // 调料用量列表
+  seasonings  Json @default("[]")
+  // 步骤列表：[{order, action, durationMinutes, heat, cookware, parallel, dependsOn}]
+  steps       Json
+  // 注意事项
+  tips        String[] @default([])
+  // 火候/技巧说明
+  heatNotes   String?
+
+  // 营养信息（粗略）
+  nutrition Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// 个人菜谱库的核心表：标记某道菜在某个家庭的状态
+model FamilyDish {
+  id       String  @id @default(cuid())
+  familyId String
+  family   Family  @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  dishId   String
+  dish     Dish    @relation(fields: [dishId], references: [id], onDelete: Cascade)
+
+  status      FamilyDishStatus @default(WANT_TO_TRY)
+  rating      Float? // 0-5，由反馈聚合
+  cookCount   Int              @default(0)
+  lastCookedAt DateTime?
+
+  // 家庭自定义标签：我家常做/孩子爱吃/适合工作日 等
+  customTags String[] @default([])
+  notes      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([familyId, dishId])
+  @@index([familyId, status])
+}
+
+enum FamilyDishStatus {
+  STAPLE // 我家常做
+  LOVED // 我家喜欢
+  KID_FAVORITE // 孩子爱吃
+  WANT_TO_TRY // 想尝试
+  WEEKDAY // 适合工作日
+  WEEKEND // 适合周末
+  LUNCH_BOX // 适合带饭
+  DISLIKED // 不喜欢
+  BLOCKED // 以后别推荐
+}
+
+// 灵感库：一句话录入
+model Wish {
+  id       String @id @default(cuid())
+  familyId String
+  family   Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
+
+  raw       String // 用户原话，例如"想试番茄牛腩"
+  // 用户手写的做法草稿（可选）。AI 解析为正式菜谱时优先采用其中的描述、份量、火候
+  manualRecipe String?
+  parsedDishId String?
+  parsedDish   Dish? @relation(fields: [parsedDishId], references: [id], onDelete: SetNull)
+
+  status     WishStatus @default(PENDING)
+  priority   Int        @default(0)
+  occasion   String? // 周末想做 / 孩子可能喜欢
+
+  createdById String
+  createdBy   User   @relation("WishCreator", fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([familyId, status])
+}
+
+enum WishStatus {
+  PENDING // 待沉淀
+  PARSED // 已变菜品
+  COOKED // 已做过
+  DISMISSED // 放弃
+}
+
+// ============================================================
+// 五、做饭流程：会话 → 点菜 → 菜单 → 采购 → 计划 → 反馈
+// ============================================================
+
+model MealSession {
+  id       String  @id @default(cuid())
+  familyId String
+  family   Family  @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  chefId   String
+  chef     User    @relation("SessionChef", fields: [chefId], references: [id])
+
+  mealType    MealType
+  targetTime  DateTime // 目标开饭时间
+  maxMinutes  Int      @default(60) // 可接受总耗时
+  eaterAdults Int      @default(2)
+  eaterKids   Int      @default(0)
+  hasGuest    Boolean  @default(false)
+  needLeftover Boolean @default(false) // 多做一些留下顿
+  needLunchBox Boolean @default(false) // 需要带饭
+
+  // 当餐就餐成员（FamilyMember.id 列表）。空则表示全家
+  attendingMemberIds String[] @default([])
+
+  // 本次临时上下文标志：省事/清淡/下饭/消耗冰箱/不买菜/可采购/少洗锅/孩子多吃蔬菜
+  contextFlags Json @default("{}")
+  notes        String?
+
+  status   SessionStatus @default(DRAFTING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  requests      MealRequest[]
+  menus         Menu[]
+  feedbacks     Feedback[]
+
+  @@index([familyId, createdAt])
+}
+
+enum MealType {
+  BREAKFAST
+  LUNCH
+  DINNER
+  SNACK
+}
+
+enum SessionStatus {
+  DRAFTING // 起草中
+  PLANNING // 已生成菜单，规划中
+  CONFIRMED // 菜单确认
+  COOKING // 做饭中
+  DONE // 完成
+  CANCELLED
+}
+
+model MealRequest {
+  id        String      @id @default(cuid())
+  sessionId String
+  session   MealSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  authorUserId String?
+  authorUser   User?   @relation("RequestAuthor", fields: [authorUserId], references: [id], onDelete: SetNull)
+  memberId     String? // 可代未注册成员发起
+  member       FamilyMember? @relation(fields: [memberId], references: [id], onDelete: SetNull)
+
+  type    RequestType
+  content String // "想吃番茄炒蛋" / "想喝汤" / "随便"
+
+  status RequestStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+
+  @@index([sessionId])
+}
+
+enum RequestType {
+  SPECIFIC_DISH // 具体菜
+  FUZZY // 模糊偏好
+}
+
+enum RequestStatus {
+  PENDING // 待厨师处理
+  ACCEPTED // 采用
+  POSTPONED // 暂缓
+  REPLACED // 替换
+  REJECTED // 拒绝
+}
+
+model Menu {
+  id        String      @id @default(cuid())
+  sessionId String
+  session   MealSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  strategy MenuStrategy @default(BALANCED)
+  status   MenuStatus   @default(DRAFT)
+  // AI 推荐理由
+  reasoning String?
+  // 标签：方案A/B/C 等
+  tag       String?
+  // 估算总耗时（基于做饭计划）
+  totalMinutes Int?
+  // 难度：1-5
+  difficulty   Int?
+  // 风险提示数组
+  risks        String[] @default([])
+
+  confirmedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  dishes        MenuDish[]
+  shoppingList  ShoppingList?
+  cookingPlan   CookingPlan?
+
+  @@index([sessionId])
+}
+
+enum MenuStrategy {
+  BALANCED // 综合平衡
+  SATISFY_REQUESTS // 满足家人点菜
+  USE_INVENTORY // 优先消耗冰箱
+  QUICK // 快手
+  KID_FRIENDLY // 孩子友好
+  WEEKEND_TREAT // 周末改善
+}
+
+enum MenuStatus {
+  DRAFT // 草稿（AI 推荐）
+  EDITING // 厨师编辑中
+  CONFIRMED // 已确认
+  ARCHIVED // 已归档
+}
+
+model MenuDish {
+  id       String @id @default(cuid())
+  menuId   String
+  menu     Menu   @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  dishId   String
+  dish     Dish   @relation(fields: [dishId], references: [id])
+
+  position         Int     @default(0)
+  servings         Int     @default(2)
+  isAddedManually  Boolean @default(false)
+  isReplacement    Boolean @default(false)
+  // 该菜用到的已有食材（用于显示"用到了哪些库存"）
+  usedInventory    Json    @default("[]")
+  // 该菜缺的食材
+  missingIngredients Json  @default("[]")
+  // 快照：菜单冻结时记录的菜名（防止后续 dish 改名导致历史失真）
+  dishNameSnapshot String
+
+  createdAt DateTime @default(now())
+
+  @@index([menuId])
+}
+
+model ShoppingList {
+  id     String @id @default(cuid())
+  menuId String @unique
+  menu   Menu   @relation(fields: [menuId], references: [id], onDelete: Cascade)
+
+  generatedAt DateTime @default(now())
+  completedAt DateTime?
+  notes       String?
+
+  items ShoppingItem[]
+}
+
+model ShoppingItem {
+  id     String       @id @default(cuid())
+  listId String
+  list   ShoppingList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  ingredientId String?
+  ingredient   Ingredient? @relation(fields: [ingredientId], references: [id], onDelete: SetNull)
+
+  // 快照
+  name      String
+  quantity  Float
+  unit      String
+  area      ShoppingArea @default(OTHER)
+
+  isHave     Boolean @default(false) // 家里已有
+  isOptional Boolean @default(false) // 可选购买
+  isChecked  Boolean @default(false) // 已购买/已勾选
+
+  notes String?
+
+  createdAt DateTime @default(now())
+
+  @@index([listId])
+}
+
+// 做饭计划 + 时间线
+model CookingPlan {
+  id     String @id @default(cuid())
+  menuId String @unique
+  menu   Menu   @relation(fields: [menuId], references: [id], onDelete: Cascade)
+
+  totalMinutes Int // 总耗时
+  startAt      DateTime // 应该几点开始做
+  endAt        DateTime // 预计完成时间
+
+  // 总体策略文本
+  strategy String
+
+  // 风险提醒
+  warnings String[] @default([])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  steps TimelineStep[]
+}
+
+model TimelineStep {
+  id     String      @id @default(cuid())
+  planId String
+  plan   CookingPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  order           Int
+  startMinute     Int // 从开始做算起的分钟数
+  durationMinutes Int
+  action          String // "淘米煮饭" / "牛肉切片腌制"
+  dishName        String? // 该步骤属于哪道菜（用于分组显示）
+
+  cookware    String? // 占用的厨具：电饭锅/汤锅/炒锅
+  stoveSlot   Int? // 占用的灶眼编号
+  heat        String? // 大火/中火/小火
+  isParallel  Boolean @default(false) // 是否与上一步并行
+  // 依赖的步骤 order 列表
+  dependsOn   Int[]   @default([])
+  // 类型：切配/腌制/煮/蒸/炒/炖/收汁/装盘
+  stepType    StepType?
+
+  // 提醒：青菜最后炒、生肉处理后清砧板、保温建议
+  reminders String[] @default([])
+
+  createdAt DateTime @default(now())
+
+  @@index([planId, order])
+}
+
+enum StepType {
+  PREP // 切配
+  MARINATE // 腌制
+  SOAK // 泡发
+  BLANCH // 焯水
+  BOIL // 煮
+  STEAM // 蒸
+  STIR_FRY // 炒
+  DEEP_FRY // 炸
+  BRAISE // 炖/烧
+  REDUCE // 收汁
+  PLATE // 装盘
+  CLEAN // 清洁
+}
+
+// ============================================================
+// 六、反馈
+// ============================================================
+
+model Feedback {
+  id        String       @id @default(cuid())
+  sessionId String
+  session   MealSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  menuId    String?
+  dishId    String?
+  dish      Dish?        @relation(fields: [dishId], references: [id], onDelete: SetNull)
+
+  // 谁给的反馈：注册用户或未注册成员
+  authorUserId String?
+  authorUser   User?   @relation("FeedbackAuthor", fields: [authorUserId], references: [id], onDelete: SetNull)
+  memberId     String?
+  member       FamilyMember? @relation(fields: [memberId], references: [id], onDelete: SetNull)
+
+  // 整体评分 1-5
+  rating  Int?
+  // 标签：好吃/一般/不喜欢/太咸/太淡/太油/太辣/太麻烦/下次还做/以后别推荐 ...
+  tags    String[] @default([])
+  comment String?
+
+  createdAt DateTime @default(now())
+
+  @@index([sessionId])
+  @@index([dishId])
+}

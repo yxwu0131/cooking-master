@@ -1,0 +1,48 @@
+# 厨神 · Caddy 反向代理配置
+# 自动 Let's Encrypt SSL，HTTPS 强制跳转
+
+{
+    email {$LETSENCRYPT_EMAIL}
+    # 严格 TLS，禁用过时协议
+    servers {
+        protocols h1 h2 h3
+    }
+}
+
+{$DOMAIN} {
+    encode zstd gzip
+
+    # 静态资源长缓存
+    @static path /_next/static/*
+    header @static Cache-Control "public, max-age=31536000, immutable"
+
+    # API/页面无缓存（避免菜单/计划脏数据）
+    @api path /api/*
+    header @api Cache-Control "no-store"
+
+    # 反代到 Next.js
+    reverse_proxy web:3000 {
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+        header_up X-Forwarded-Host {host}
+    }
+
+    # 安全头
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+        -Server
+    }
+
+    # 日志
+    log {
+        output file /data/access.log {
+            roll_size 50MiB
+            roll_keep 5
+        }
+        format json
+    }
+}

@@ -1,0 +1,124 @@
+name: cooking-master
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: cooking-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-cooking}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:-cooking_master}
+      TZ: Asia/Shanghai
+      PGTZ: Asia/Shanghai
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cooking} -d ${POSTGRES_DB:-cooking_master}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - cooking-net
+
+  # 一次性初始化：建表（db push）+ 灌种子数据（食材库 + 菜品库）
+  # 用 builder 阶段镜像（含 prisma CLI + tsx + seed.ts），跑完即退出
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+    container_name: cooking-migrate
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-cooking}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-cooking_master}?schema=public
+      TZ: Asia/Shanghai
+    command: >
+      sh -c "node node_modules/prisma/build/index.js db push --skip-generate &&
+      node node_modules/tsx/dist/cli.mjs prisma/seed.ts"
+    networks:
+      - cooking-net
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cooking-web
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-cooking}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-cooking_master}?schema=public
+      AUTH_SECRET: ${AUTH_SECRET:?AUTH_SECRET is required (at least 32 chars)}
+      AUTH_URL: ${AUTH_URL:-https://dorianweb.com}
+      AUTH_TRUST_HOST: "true"
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:?DEEPSEEK_API_KEY is required}
+      DEEPSEEK_API_BASE: ${DEEPSEEK_API_BASE:-https://api.deepseek.com/v1}
+      DEEPSEEK_MODEL: ${DEEPSEEK_MODEL:-deepseek-chat}
+      IMAGES_DIR: /app/data/images
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://dorianweb.com}
+      TZ: Asia/Shanghai
+    volumes:
+      - ./data/images:/app/data/images
+    command: ["node", "server.js"]
+    networks:
+      - cooking-net
+
+  # Caddy 仅在 public profile 下启用（需要域名 + 公网 IP + 80/443 转发）
+  # 局域网部署不需要它，用 docker-compose.lan.yml 直接暴露 web 端口即可
+  caddy:
+    image: caddy:2-alpine
+    container_name: cooking-caddy
+    profiles: ["public"]
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./data/caddy:/data
+      - ./data/caddy-config:/config
+    depends_on:
+      - web
+    environment:
+      DOMAIN: ${DOMAIN:-dorianweb.com}
+      # public profile 部署前务必在 .env 填真实邮箱（Let's Encrypt 到期通知）；留空 Caddy 仍能签发证书
+      LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL:-}
+    networks:
+      - cooking-net
+
+  backup:
+    image: postgres:16-alpine
+    container_name: cooking-backup
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGHOST: db
+      PGUSER: ${POSTGRES_USER:-cooking}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: ${POSTGRES_DB:-cooking_master}
+      TZ: Asia/Shanghai
+    volumes:
+      - ./data/backups:/backups
+    # 每日 03:00 全量备份，保留 14 天
+    command: >
+      sh -c "
+      apk add --no-cache dcron tzdata && \
+      echo '0 3 * * * pg_dump -Fc -f /backups/cooking_$$(date +%Y%m%d_%H%M%S).dump && find /backups -name \"cooking_*.dump\" -mtime +14 -delete' > /var/spool/cron/crontabs/root && \
+      crond -f -l 2
+      "
+    networks:
+      - cooking-net
+
+networks:
+  cooking-net:
+    driver: bridge

@@ -1,0 +1,106 @@
+import Link from "next/link";
+import { auth } from "@/auth";
+import { prisma } from "@/lib/db";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { UtensilsCrossed, Users, BookOpen, Refrigerator, Sparkles, ArrowRight } from "lucide-react";
+
+export default async function DashboardPage() {
+  const session = await auth();
+  const familyId = session!.user.familyId;
+  const family = familyId
+    ? await prisma.family.findUnique({
+        where: { id: familyId },
+        include: {
+          _count: {
+            select: { members: true, familyDishes: true, inventory: true, wishes: true },
+          },
+        },
+      })
+    : null;
+
+  return (
+    <div className="container mx-auto max-w-5xl px-4 py-8 space-y-7">
+      <div className="space-y-1.5">
+        <h1 className="text-3xl font-bold tracking-tight">
+          {family ? `${family.name} · 今天吃什么？` : "欢迎来到厨神"}
+        </h1>
+        <p className="text-muted-foreground">
+          点一桌好菜，剩下的交给厨神：推荐菜单、备齐采购、排好做饭节奏。
+        </p>
+      </div>
+
+      {/* Hero CTA */}
+      <Card className="overflow-hidden border-primary/20 bg-gradient-to-br from-primary/12 via-accent/40 to-background shadow-md shadow-primary/5">
+        <CardContent className="flex flex-col gap-5 p-7 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-4">
+            <div className="rounded-2xl bg-primary p-3 text-primary-foreground shadow-sm shadow-primary/30">
+              <Sparkles className="size-6" />
+            </div>
+            <div className="space-y-1">
+              <h2 className="text-xl font-semibold tracking-tight">开始一顿饭</h2>
+              <p className="text-sm text-muted-foreground max-w-md">
+                告诉厨神今天几个人吃、想吃什么口味，立刻得到一套完整菜单与做饭时间线。
+              </p>
+            </div>
+          </div>
+          <Button asChild size="lg" className="shrink-0 shadow-sm shadow-primary/30">
+            <Link href="/cook/new">
+              <UtensilsCrossed className="size-4" />
+              开始做饭
+              <ArrowRight className="size-4" />
+            </Link>
+          </Button>
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard href="/family" icon={Users} label="家庭成员" value={family?._count.members ?? 0} unit="人" tone="orange" />
+        <StatCard href="/dishes" icon={BookOpen} label="菜品库" value={family?._count.familyDishes ?? 0} unit="道" tone="green" />
+        <StatCard href="/inventory" icon={Refrigerator} label="当前食材" value={family?._count.inventory ?? 0} unit="种" tone="blue" />
+        <StatCard href="/dishes/wishes" icon={Sparkles} label="灵感库" value={family?._count.wishes ?? 0} unit="条" tone="purple" />
+      </div>
+    </div>
+  );
+}
+
+const TONES: Record<string, string> = {
+  orange: "bg-orange-100 text-orange-600 dark:bg-orange-500/15 dark:text-orange-300",
+  green: "bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300",
+  blue: "bg-sky-100 text-sky-600 dark:bg-sky-500/15 dark:text-sky-300",
+  purple: "bg-violet-100 text-violet-600 dark:bg-violet-500/15 dark:text-violet-300",
+};
+
+function StatCard({
+  href,
+  icon: Icon,
+  label,
+  value,
+  unit,
+  tone,
+}: {
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: number;
+  unit: string;
+  tone: keyof typeof TONES;
+}) {
+  return (
+    <Link href={href} className="group">
+      <Card className="h-full transition-all group-hover:-translate-y-0.5 group-hover:shadow-md">
+        <CardContent className="p-5">
+          <div className={cn("inline-flex size-10 items-center justify-center rounded-xl", TONES[tone])}>
+            <Icon className="size-5" />
+          </div>
+          <div className="mt-3 flex items-baseline gap-1">
+            <span className="text-3xl font-bold tracking-tight">{value}</span>
+            <span className="text-xs text-muted-foreground">{unit}</span>
+          </div>
+          <div className="text-sm text-muted-foreground mt-0.5">{label}</div>
+        </CardContent>
+      </Card>
+    </Link>
+  );
+}
