@@ -1,12 +1,19 @@
 # 项目交接摘要
 
-> **2026-05-22 最新状态**：菜品库扩容已完成（DISHES 追加 50 道 → DB 共 74 道，seed 已跑写库，214 食材）。**UI 已从灰阶 shadcn 默认重做成「暖色食欲」主题**（globals.css token 全改 + nav/dashboard/badge/card/dishes-browse/auth-layout）。tsc 零错误，CDP 截图验证 login/dashboard/dishes 三页观感 OK。Dev server 当前会话后台跑着（task bsiettmhs，3000 端口）；Postgres 容器 cooking-master-db Up（靠 `docker stop+start` 修复端口，restart 不够，见坑 11 补订）。
+> **2026-05-22 🎉 已上线生产：https://cook.dorianweb.com**（极空间 NAS）。菜品库 68 道 + 214 食材已入生产库，UI 暖色主题。本地 dev 仍可用（Postgres 容器 cooking-master-db，端口靠 `docker stop+start` 修，见坑 11）。
 >
-> **极空间部署（#13）部署产物已全部修好并本地验证**（生产 `next build` 通过、`docker compose config` 有效、`DEEPSEEK_MODEL` 已修正 deepseek-chat）。修了 3 个 NAS 部署必崩的阻断点（NOTES 坑 14）：①无 migrations ②runner 缺 prisma CLI ③seed 跑不了——解法：新增一次性 `migrate` 服务（builder 镜像 `db push + tsx seed`），web 改纯 `node server.js`。部署分 **LAN/public 两 profile**（决策 24）：Caddy 进 public profile，新增 `docker-compose.lan.yml`。
+> **生产部署架构（已落地）**：GitHub Actions（`.github/workflows/docker-build.yml`）推 main 自动构建 → `ghcr.io/yxwu0131/cooking-master:latest`（web，standalone runner）+ `:migrate`（builder，跑 `db push`+`tsx seed`）。NAS 上 `/data_s001/cooking-master/` 放 `docker-compose.prod.yml` + `.env`，`sudo docker compose -f docker-compose.prod.yml up -d` 拉镜像跑 db+migrate+web，web 暴露 **3001**（3000 被 child-growth 占用）。复用现有 **cloudflared** 隧道，Cloudflare 后台加 public hostname `cook.dorianweb.com → http://192.168.1.3:3001`，TLS 由 Cloudflare 托管（**没用 Caddy**）。
 >
-> **域名情况更新（2026-05-22 用户告知）**：dorianweb.com 在 **Cloudflare**，且已有另一个项目在跑。计划用**子域名**（待定，如 cook.dorianweb.com）放本项目。推荐走 **Cloudflare Tunnel（cloudflared）**：免公网 IP、免端口转发、Cloudflare 自动 TLS → 不需要 Caddy/Let's Encrypt（public profile 的 Caddy 大概率用不上）。**仍卡在 DeepSeek Key（硬门槛）+ NAS SSH 接入方式 + 现有项目的暴露方式（是否已用 cloudflared）尚未确认**。
+> **部署中踩的坑全记在 NOTES 坑 14-21 / 决策 22-26**：①.npmrc Windows 路径毒化镜像 ②pnpm 11 build 脚本拦截（用 `--ignore-scripts`+`pnpm rebuild`）③`pnpm exec` 触发 deps-check（直接调 `.bin`）④pnpm 布局下 prisma 生成产物要从 `.pnpm/@prisma+client@*/.../.prisma` 手动补进 standalone ⑤极空间 SSH 重度沙箱（HOME 只读/docker 需 sudo/无法配公钥）⑥终端 ~90 字符硬折行（命令保持短行+用变量）⑦国内拉 Docker Hub/ghcr 超时（用 `docker.1ms.run`/`ghcr.nju.edu.cn` 镜像源 retag 回原名）⑧Cloudflare URL 要带 `http://` 前缀。
 >
-> **下一窗口接续**：确认现有项目暴露方式 → 定子域名 → Cloudflare Tunnel 加 public hostname 路由到 NAS web:3000 → 填 .env（AUTH_URL=https://<子域名>）→ LAN profile 起容器。之后可选 #14 / #20。
+> **本地 git 仓库已建并推 GitHub**：`https://github.com/yxwu0131/cooking-master`（public，main 分支）。本地 git 身份是占位 `dorian <dorian@dorianweb.com>`（仅本仓库）。
+>
+> **遗留 / 下一窗口可做**：
+> - ⚠️ 安全：用户在排障 inspect 输出里暴露了 child-growth 的 Supabase `SERVICE_ROLE_KEY` + 一个 DeepSeek key（cook 也复用了同一个 DeepSeek key），**建议轮换**。
+> - migrate 镜像 1.06GB 偏大（builder 全量），国内首拉慢（决策 26）——可做精简 migrator 阶段优化。
+> - 生产验收流程还没完整走（注册→建家庭→点菜→AI 推荐→时间线→反馈）。
+> - 功能积压：#14 厨师自定义菜单 / #20 厨师评价等级 / 库存购买日期 / 常用菜模板。
+> - 更新生产：改代码推 main → Actions 重建镜像 → NAS `pull && up -d`（或 watchtower 自动）。
 
 
 ## 1. 当前目标

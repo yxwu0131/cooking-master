@@ -391,3 +391,36 @@
 - **解法**：runner 阶段用 glob 从 .pnpm 路径补进 standalone：`COPY --from=builder /app/node_modules/.pnpm/@prisma+client@*/node_modules/.prisma ./node_modules/.prisma`（`*` 匹配版本+hash 段，不跨 `/`）。删掉原来对 `node_modules/.prisma` 和 `@prisma/client` 的两条显式拷贝（后者 standalone 已自带）。验证：`docker run runner node -e "new (require('@prisma/client').PrismaClient)()"` 打印 client OK、引擎可解析。
 - **教训**：pnpm + Prisma + Next standalone 三者组合，生成的 client/引擎不会自动进 standalone，必须从 `.pnpm/@prisma+client@*/node_modules/.prisma` 手动补；别套用 npm 的 `node_modules/.prisma` 顶层路径。
 
+---
+
+## 2026-05-22 极空间 NAS 实战部署落地（cook.dorianweb.com 上线）
+
+**最终成功路径**：GitHub Actions 构建镜像推 GHCR → NAS `sudo docker compose -f docker-compose.prod.yml up -d` 拉镜像跑 db+migrate+web（web 暴露 3001）→ 复用现有 cloudflared 隧道、Cloudflare 后台加 `cook.dorianweb.com → http://192.168.1.3:3001` 路由。验收：migrate `Exited(0)`（214 食材/68 菜）、`curl localhost:3001/login` 200、`https://cook.dorianweb.com` 可访问。
+
+### 坑 18：极空间 SSH 账号是重度沙箱
+- **现象**：SSH 登录用户名是手机号（如 `18938898409`），`HOME=/home` **只读**、仅 `/tmp` 可写、`docker` 必须 sudo、无免密 sudo（`sudo -n` 失败但带密码 sudo 可用）。
+- **影响**：① 没法在 NAS 上 clone+本地 build（沙箱+无持久可写目录）；② 没法配 SSH 公钥免密（`~/.ssh/authorized_keys` 写不进只读 HOME）——所以"AI 用密钥免密接管 NAS"这条路走不通，只能让用户在自己终端里粘命令、贴回输出。
+- **解法**：docker 操作一律 `sudo`；持久化数据放大容量数据卷（本机是 `/data_s001`，15T；docker root 在 `/data_s002/.../zdocker`）。项目目录 `sudo mkdir -p /data_s001/cooking-master`。
+- **教训**：极空间这类消费级 NAS 的 SSH 是给"贴命令"用的，不是给自动化用的；docker 真正的管理面是它的图形 Docker 应用（child-growth/cloudflared 都是 GUI 建的，镜像走 GHCR + watchtower）。顺着"CI 出镜像、NAS 拉镜像"做最省心。
+
+### 坑 19：极空间终端在 ~90 字符处硬折行，把长命令截断成多条
+- **现象**：粘贴较长的单行命令，终端在 ~90 列插入真实换行，折行后的部分被当成新命令执行 → `-s: command not found`、`$VAR: command not found`、heredoc 卡在 `>` 等。`.env` 一度被写成空值。
+- **解法**：① 所有命令保持**短行**（<~70 字符）；② 长值（密钥、镜像全名）先塞进**短变量**再引用（如 `M=ghcr.nju.edu.cn/...; sudo docker tag $M:migrate $G:migrate`）；③ 写文件别用多行 heredoc，改用**一行一个 `echo xxx | sudo tee -a .env`**（每行很短）。
+- **教训**：远程粘贴命令时永远假设终端会折行；能用变量缩短就缩短，能拆成多条短命令就拆。
+
+### 坑 20：国内拉 Docker Hub / ghcr 镜像超时，要走国内镜像源 + retag
+- **现象**：`docker compose up -d` 卡在 `db` 拉 `postgres:16-alpine`（`registry-1.docker.io` `context deadline exceeded`）；ghcr 的 web/migrate 也极慢（migrate 镜像 1.06GB，估 1 小时）。
+- **解法**：用国内镜像源拉同一镜像再 `docker tag` 回原名（镜像层按 digest 寻址，retag 后 compose 用本地、不再访问远程）：
+  - Docker Hub → `docker.1ms.run/library/postgres:16-alpine` 然后 `docker tag ... postgres:16-alpine`
+  - ghcr → `ghcr.nju.edu.cn/yxwu0131/cooking-master:{latest,migrate}` 然后 tag 回 `ghcr.io/...`
+  - 实测可达镜像源：`docker.1ms.run`(401)、`dockerpull.org`(401)、`docker.1panel.live`(200)、`ghcr.nju.edu.cn`(南大，教育网快)
+- **坑中坑**：`up -d` 默认 pull policy 是 "missing"——**只要本地有同名 tag 就不会去远程**。所以"拉镜像源+retag 回原名"能彻底绕开被墙的官方仓库。
+- **教训**：给国内 NAS 部署，凡是 image 引用都要预判官方仓库被墙；先把镜像 retag 到本地再 `up -d`。child-growth 没踩到 postgres 这坑是因为它用 Supabase、无本地 DB 镜像。
+
+### 坑 21：Cloudflare Tunnel public hostname 的 URL 必须带协议前缀
+- **现象**：填 `192.168.1.3:3001` 报 `Invalid service URL format (must start with protocol like https://, tcp://, etc.)`。
+- **解法**：填 `http://192.168.1.3:3001`（web 是明文 HTTP，TLS 由 Cloudflare 边缘负责）。cloudflared 容器在 NAS 上，用宿主局域网 IP+发布端口即可达到 web 容器。
+
+### 决策 26：migrate 镜像偏大（1.06GB），待优化
+- migrate 用的是 `builder` 阶段镜像（含全量 node_modules + .next + 源码），1.06GB，国内首拉很慢。后续可做一个精简 migrator 阶段（只 prisma CLI + tsx + schema + seed.ts + 必要 deps），或把 db push/seed 改成能在 slim web 镜像里跑（编译 seed 为 JS）。本次先用大镜像跑通，不阻塞上线。
+
