@@ -2660,7 +2660,17 @@ async function main() {
 
   // 2. 菜品 + 菜谱
   console.log(`\n🍳 写入 ${DISHES.length} 道菜品...`);
+  let skipped = 0;
   for (const d of DISHES) {
+    // 用户手动编辑过做法的内置菜：保留用户版本，不被种子覆盖
+    const existing = await prisma.dish.findUnique({
+      where: { name: d.name },
+      select: { userEdited: true },
+    });
+    if (existing?.userEdited) {
+      skipped++;
+      continue;
+    }
     await prisma.dish.upsert({
       where: { name: d.name },
       create: {
@@ -2726,7 +2736,7 @@ async function main() {
       },
     });
   }
-  console.log(`   ✓ 菜品完成`);
+  console.log(`   ✓ 菜品完成（跳过 ${skipped} 道用户已编辑的内置菜）`);
 
   console.log(`\n✅ 种子数据初始化完成`);
 }

@@ -325,6 +325,8 @@ model Dish {
 
   // AI 生成时填的扩展数据
   source     DishSource @default(SEED)
+  // 用户是否手动编辑过做法：true 时 seed 不再覆盖（保护用户改动）
+  userEdited Boolean    @default(false)
   imageUrl   String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt

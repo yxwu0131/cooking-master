@@ -203,6 +203,7 @@
 - **解法**：`docker restart cooking-master-db` 一次，端口重新绑定成 `0.0.0.0:5432` + `[::]:5432`
 - **教训**：Docker Desktop 异常关闭后，`start` 不一定能恢复端口映射；遇到能连 docker exec 但 host 连不上端口的情况，直接 restart
 - **2026-05-21 补订**：本次复发时 **`docker restart` 不够**——restart 后 `docker port` 仍为空、host 5432 仍无 listen，必须用完整 `docker stop && docker start` 才重建端口代理（`docker port` 才显示 `0.0.0.0:5432`/`[::]:5432`）。另外本次 Docker Desktop 守护进程整个没起（`docker ps` 报 `dockerDesktopLinuxEngine ... cannot find the file`），要先 `Start-Process "C:\Program Files\Docker\Docker\Docker Desktop.exe"` 再轮询 `docker info` 等引擎就绪。可靠顺序：起 Docker Desktop → 等 `docker info` OK → `docker stop+start <db>` → `docker port` 确认 host 端口 → 跑 seed。
+- **2026-05-22 再补订**：上面 stop+start 的修法**也会失灵**——真正根因见 **坑 22**（Windows 动态端口范围 1024–14999 把 5432 抢走，Docker 静默绑不上）。当 restart/stop+start/删重建/`wsl --shutdown` 全部无效时，改用范围外 host 端口（如 55432）即可。
 
 ### 决策 10：时间统一走 `lib/format.ts`，强制 Asia/Shanghai
 - **位置**：`lib/format.ts`
@@ -423,4 +424,18 @@
 
 ### 决策 26：migrate 镜像偏大（1.06GB），待优化
 - migrate 用的是 `builder` 阶段镜像（含全量 node_modules + .next + 源码），1.06GB，国内首拉很慢。后续可做一个精简 migrator 阶段（只 prisma CLI + tsx + schema + seed.ts + 必要 deps），或把 db push/seed 改成能在 slim web 镜像里跑（编译 seed 为 JS）。本次先用大镜像跑通，不阻塞上线。
+
+### 坑 22：Windows 动态端口范围把 5432 抢走，Docker 永远绑不上该端口（坑 11 的真正根因）
+- **现象（2026-05-22）**：开机后本地网页打不开。Docker Desktop 守护进程没自启；拉起后 DB 容器能跑、容器内 `pg_isready` 正常，但 `docker inspect .NetworkSettings.Ports` 始终 `{"5432/tcp":[]}`，host `127.0.0.1:5432` 连不上。**坑 11 的所有套路（restart、stop+start、删容器重建、杀进程重启 Docker、`wsl --shutdown` 重置 WSL2 后端）这次全部无效**。
+- **隔离定位**：用一次性 nginx 容器测端口发布——`-p 18080:80` **成功**（`0.0.0.0:18080->80`），`-p 5432:80` **失败**（`{}`）。证明 Docker 端口转发本身没坏，**问题特定于 5432 这个端口号**。
+- **根因**：`netsh int ipv4 show dynamicportrange tcp` 显示动态端口范围被设成 **起始 1024、共 13977 个（即 1024–14999）**（正常 Windows 默认是 49152 起）。**5432 落在这个区间内**，会被 Hyper-V/WSL 的 NAT 临时预留抢占（这类预留不稳定地出现在 `excludedportrange` 里，但足以让 Docker 静默绑定失败——`NetworkSettings.Ports` 直接空）。"昨天能用今天不能用"就是因为每次重启 Hyper-V 重新分配，有时抢到 5432 有时没抢到。
+- **解法（不需要管理员、可逆）**：把 DB 容器映射到**范围外**的 host 端口（本次用 **55432**），同步改 `.env` 的 `DATABASE_URL` 端口为 55432（容器内仍是 5432，只改主机映射）：
+  ```
+  docker run -d --name cooking-master-db -p 55432:5432 \
+    -e POSTGRES_USER=cooking -e POSTGRES_PASSWORD=cooking_dev -e POSTGRES_DB=cooking_master \
+    -v <原匿名卷hash>:/var/lib/postgresql/data postgres:16-alpine
+  ```
+  数据卷独立（重建容器不丢数据，日志会显示 `database system was shut down ... ready`）。改完 host `55432` 立即可连，dishes 页（查库）返回 200。
+- **根治选项（需管理员，本次没做）**：① `netsh int ipv4 set dynamicport tcp start=49152 num=16384` 把动态范围改回正常值，5432 就不会被抢；② 或 `netsh int ipv4 add excludedportrange protocol=tcp startport=5432 numberofports=1` 显式保留 5432 给 Docker。当前 shell 非 elevated（`net start winnat` 报 Access denied），所以走了改端口的旁路。
+- **教训**：遇到"docker exec 能连、host 端口连不上、`NetworkSettings.Ports` 为空"且 restart/重建/wsl shutdown 都无效时，**先 `docker run -p <某高位端口>:80 nginx` 隔离是不是端口号本身的问题**，再 `netsh int ipv4 show dynamicportrange tcp` 看目标端口是否落在动态范围内。低位端口（<49152）在 Windows+Docker+Hyper-V 下不可靠，本地服务尽量用高位端口映射。这是坑 11"端口绑定丢失"的真正根因，坑 11 之前 stop+start 偶尔生效只是恰好那次 Hyper-V 没抢 5432。
 

@@ -366,6 +366,7 @@ export async function updateDishRecipeAction(input: UpdateDishRecipeInput) {
         tags,
         mainIngredients,
         requiredCookware,
+        userEdited: true, // 标记被用户编辑，seed 更新时不再覆盖
       },
     }),
     prisma.recipe.upsert({
