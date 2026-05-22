@@ -645,6 +645,9 @@ model CookingPlan {
   // 风险提醒
   warnings String[] @default([])
 
+  // 跨菜合并的备菜清单（按食材/工序统筹，而非按单菜）：{ aiHint, groups: [...] }
+  prepPlan Json?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

@@ -165,3 +165,31 @@ export class DeepSeekProvider implements AIProvider {
     return result.data;
   }
 }
+
+/**
+ * 跨菜「按食材合并备菜」的人话建议（hybrid 方案的 AI 部分）。
+ * best-effort：失败/超时返回 null，不影响时间线生成。
+ */
+export async function consolidatePrepHint(dishNames: string[]): Promise<string | null> {
+  if (!dishNames.length) return null;
+  try {
+    const raw = await callDeepSeek(
+      [
+        {
+          role: "system",
+          content: "你是经验丰富的家庭主厨，擅长一个人同时做多道菜时的备菜统筹。",
+        },
+        {
+          role: "user",
+          content: `今天一桌菜：${dishNames.join("、")}。
+请用 2-3 句话给"按食材统筹备菜"的实操建议：哪些食材可一次性切配分到多道菜、姜蒜葱等辅料怎么一次备齐、需要焯水/泡发的怎么合并处理、切好后按下锅顺序怎么摆。只讲跨菜合并技巧，不要逐道菜复述做法，不要分点，直接一段话。`,
+        },
+      ],
+      { temperature: 0.5, maxTokens: 400 }
+    );
+    return raw.trim() || null;
+  } catch (e) {
+    console.error("[ai.consolidatePrepHint] 失败(忽略):", e);
+    return null;
+  }
+}

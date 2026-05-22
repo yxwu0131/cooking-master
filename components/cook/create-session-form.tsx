@@ -33,12 +33,29 @@ const CONTEXT_OPTIONS: Array<[keyof CreateSessionInput["contextFlags"] | string,
   ["moreVeggies", "让孩子多吃蔬菜"],
 ];
 
-function defaultTargetTime(): Date {
+// 各餐次的典型开饭时间（时, 分）
+const MEAL_DEFAULT_HOUR: Record<string, [number, number]> = {
+  BREAKFAST: [7, 30],
+  LUNCH: [12, 0],
+  DINNER: [18, 30],
+  SNACK: [15, 0],
+};
+
+function defaultTargetTime(mealType: string = "DINNER"): Date {
   const d = new Date();
-  d.setHours(18, 30, 0, 0);
+  const [h, m] = MEAL_DEFAULT_HOUR[mealType] ?? [18, 30];
+  d.setHours(h, m, 0, 0);
   if (d.getTime() <= Date.now()) {
     d.setDate(d.getDate() + 1);
   }
+  return d;
+}
+
+// 切换餐次时：保留用户已选的日期，只把时间挪到该餐次的典型开饭点
+function withMealHour(base: Date, mealType: string): Date {
+  const [h, m] = MEAL_DEFAULT_HOUR[mealType] ?? [18, 30];
+  const d = new Date(base);
+  d.setHours(h, m, 0, 0);
   return d;
 }
 
@@ -108,9 +125,14 @@ export function CreateSessionForm({
               <Label>餐次</Label>
               <Select
                 value={data.mealType}
-                onValueChange={(v) =>
-                  setData({ ...data, mealType: v as CreateSessionInput["mealType"] })
-                }
+                onValueChange={(v) => {
+                  const mealType = v as CreateSessionInput["mealType"];
+                  setData({
+                    ...data,
+                    mealType,
+                    targetTime: withMealHour(data.targetTime, mealType),
+                  });
+                }}
               >
                 <SelectTrigger>
                   <SelectValue />

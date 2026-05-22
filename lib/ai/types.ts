@@ -154,10 +154,40 @@ export const recipeGenerateInputSchema = z.object({
 
 export type RecipeGenerateInput = z.infer<typeof recipeGenerateInputSchema>;
 
+// DeepSeek 经常把"适量/少许/半勺"等非数字塞进数字字段（尤其调料 quantity），
+// 这里宽松解析：是数字直接用；是字符串就抽取其中的数值，抽不到则用兜底值。
+const flexNum = (fallback = 0) =>
+  z.preprocess((v) => {
+    if (typeof v === "number") return Number.isFinite(v) ? v : fallback;
+    if (typeof v === "string") {
+      const n = parseFloat(v.replace(/[^\d.\-]/g, ""));
+      return Number.isFinite(n) ? n : fallback;
+    }
+    return fallback;
+  }, z.number());
+
+const stepTypeSchema = z
+  .enum([
+    "PREP",
+    "MARINATE",
+    "SOAK",
+    "BLANCH",
+    "BOIL",
+    "STEAM",
+    "STIR_FRY",
+    "DEEP_FRY",
+    "BRAISE",
+    "REDUCE",
+    "PLATE",
+    "CLEAN",
+  ])
+  // AI 偶尔返回枚举外的值（如中文"翻炒"），兜底成 PREP 不让整条校验失败
+  .catch("PREP");
+
 export const recipeGenerateOutputSchema = z.object({
   cuisine: z.string(),
-  totalMinutes: z.number(),
-  difficulty: z.number().min(1).max(5),
+  totalMinutes: flexNum(20),
+  difficulty: flexNum(2).pipe(z.number()).transform((n) => Math.min(5, Math.max(1, Math.round(n)))),
   isSpicy: z.boolean(),
   isVegetarian: z.boolean(),
   isSoup: z.boolean(),
@@ -166,7 +196,7 @@ export const recipeGenerateOutputSchema = z.object({
   ingredients: z.array(
     z.object({
       name: z.string(),
-      quantity: z.number(),
+      quantity: flexNum(),
       unit: z.string(),
       optional: z.boolean().optional(),
     })
@@ -174,29 +204,16 @@ export const recipeGenerateOutputSchema = z.object({
   seasonings: z.array(
     z.object({
       name: z.string(),
-      quantity: z.number(),
+      quantity: flexNum(),
       unit: z.string(),
     })
   ),
   steps: z.array(
     z.object({
-      order: z.number(),
+      order: flexNum(),
       action: z.string(),
-      durationMinutes: z.number(),
-      stepType: z.enum([
-        "PREP",
-        "MARINATE",
-        "SOAK",
-        "BLANCH",
-        "BOIL",
-        "STEAM",
-        "STIR_FRY",
-        "DEEP_FRY",
-        "BRAISE",
-        "REDUCE",
-        "PLATE",
-        "CLEAN",
-      ]),
+      durationMinutes: flexNum(),
+      stepType: stepTypeSchema,
       heat: z.string().optional(),
       cookware: z.string().optional(),
       parallel: z.boolean().optional(),

@@ -439,3 +439,22 @@
 - **根治选项（需管理员，本次没做）**：① `netsh int ipv4 set dynamicport tcp start=49152 num=16384` 把动态范围改回正常值，5432 就不会被抢；② 或 `netsh int ipv4 add excludedportrange protocol=tcp startport=5432 numberofports=1` 显式保留 5432 给 Docker。当前 shell 非 elevated（`net start winnat` 报 Access denied），所以走了改端口的旁路。
 - **教训**：遇到"docker exec 能连、host 端口连不上、`NetworkSettings.Ports` 为空"且 restart/重建/wsl shutdown 都无效时，**先 `docker run -p <某高位端口>:80 nginx` 隔离是不是端口号本身的问题**，再 `netsh int ipv4 show dynamicportrange tcp` 看目标端口是否落在动态范围内。低位端口（<49152）在 Windows+Docker+Hyper-V 下不可靠，本地服务尽量用高位端口映射。这是坑 11"端口绑定丢失"的真正根因，坑 11 之前 stop+start 偶尔生效只是恰好那次 Hyper-V 没抢 5432。
 
+### 坑 23：DeepSeek 把"适量/少许"塞进数字字段，菜谱 schema 校验失败（AI入库报"格式不对"）
+- **现象（2026-05-22）**：灵感库新菜点「AI入库」报"AI返回的菜品格式不对"（`wishToDish` 的 `wishToDishOutputSchema.safeParse` 失败）。
+- **根因**：中餐调料 DeepSeek 极常返回 `"quantity":"适量"/"少许"` 等中文字符串，而 `recipeGenerateOutputSchema` 里 `quantity` 是 `z.number()`，整条校验直接挂；`stepType` 偶尔也返回枚举外的中文（如"翻炒"）。
+- **解法**：`lib/ai/types.ts` 加 `flexNum(fallback)`（`z.preprocess`：数字直用、字符串抽数值、抽不到给兜底）应用到所有数字字段（quantity/totalMinutes/durationMinutes/order/difficulty）；`difficulty` 再 transform 钳到 1-5；`stepType` 用 `.catch("PREP")` 兜底。valid 数字原样通过，零风险。修 base schema 同时修好普通菜谱生成。
+- **教训**：对接 LLM 的结构化输出，数字字段一律宽松解析，别用裸 `z.number()`，尤其中文量词场景。
+
+### 决策 27：午餐却显示 18:30 开饭——开饭时间随餐次走
+- `components/cook/create-session-form.tsx` 原 `defaultTargetTime()` 写死 18:30，且切换餐次不更新时间。改：加 `MEAL_DEFAULT_HOUR`（早 7:30/午 12:00/晚 18:30/加餐 15:00），初始按餐次取默认；切换餐次时 `withMealHour` 保留已选日期、只把时间挪到该餐次典型点。
+- 注意：已生成的旧 session 的 targetTime 不会变，用户可在表单里手动改时间。
+
+### 决策 28：做饭时间线模块一/二改为「按食材横向合并」而非按单菜罗列
+- **背景**：用户反馈 6 模块仍是"单菜流程套了个模块壳"。根因在 `lib/planning/cooking-plan.ts`——步骤逐道菜原样取出只做时间调度，UI(`classifyStepToModule`) 只是二次分桶，没有跨菜按食材统筹。
+- **方案（hybrid：规则骨架 + AI 一句话）**：
+  - 新增 `lib/planning/prep-consolidation.ts:buildPrepPlan(dishes, catalog)`：规则化生成跨菜备菜清单——RICE(主食先煮)/SOAK(干货泡发)/MARINATE(集中腌制)归模块1，WASH_CUT(按 canonical 食材聚合洗切，复用 shopping-list 的别名归一化)/BLANCH(焯水批次)归模块2。
+  - `lib/ai/deepseek.ts:consolidatePrepHint(dishNames)`：best-effort 出一段"统筹备菜建议"人话，失败返回 null 不阻断。
+  - `cooking-plan.ts` 生成计划时 build prepPlan + 调 AI hint，存到新字段 `CookingPlan.prepPlan Json?`。
+  - UI `session-workspace.tsx:TimelineView`：模块1/2 有 prepPlan 时渲染"按食材"清单（食材→总量→分给哪几道菜的 Badge），模块3-6 保持按菜步骤；旧计划 prepPlan 为 null 时回退原渲染。
+- **要看到新效果需重新生成做饭计划**（旧计划无 prepPlan）。
+

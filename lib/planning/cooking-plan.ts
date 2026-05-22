@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/db";
 import type { StepType } from "@prisma/client";
+import { buildPrepPlan, type DishForPrep } from "./prep-consolidation";
+import { consolidatePrepHint } from "@/lib/ai/deepseek";
 
 type RecipeStep = {
   order: number;
@@ -350,6 +352,23 @@ export async function generateCookingPlanForMenu(menuId: string) {
     );
   }
 
+  // 8. 跨菜「按食材/工序」合并备菜清单（hybrid：规则骨架 + AI 一句话建议）
+  const catalog = await prisma.ingredient.findMany({
+    select: { name: true, aliases: true, category: true },
+  });
+  const dishesForPrep: DishForPrep[] = menu.dishes.map((md) => ({
+    name: md.dishNameSnapshot,
+    servings: md.servings,
+    dishServings: md.dish.servings || 2,
+    isStaple: md.dish.isStaple,
+    ingredients:
+      (md.dish.recipe?.ingredients as DishForPrep["ingredients"] | null) ?? [],
+    steps:
+      (md.dish.recipe?.steps as DishForPrep["steps"] | null) ?? [],
+  }));
+  const prepPlan = buildPrepPlan(dishesForPrep, catalog);
+  prepPlan.aiHint = await consolidatePrepHint(dishesForPrep.map((d) => d.name));
+
   await prisma.cookingPlan.create({
     data: {
       menuId,
@@ -358,6 +377,7 @@ export async function generateCookingPlanForMenu(menuId: string) {
       endAt: targetTime,
       strategy,
       warnings,
+      prepPlan: prepPlan as unknown as object,
       steps: {
         create: allSteps.map((s) => ({
           order: s.order,

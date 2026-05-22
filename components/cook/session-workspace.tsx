@@ -45,6 +45,7 @@ import {
 import { cn } from "@/lib/utils";
 import { formatLocal, formatTime } from "@/lib/format";
 import { FeedbackSection } from "@/components/cook/feedback-section";
+import type { PrepPlan, PrepGroup } from "@/lib/planning/prep-consolidation";
 
 type Session = {
   id: string;
@@ -104,6 +105,7 @@ type Session = {
       warnings: string[];
       startAt: Date;
       endAt: Date;
+      prepPlan: unknown; // Prisma JsonValue；在 TimelineView 里 cast 成 PrepPlan
       steps: Array<{
         order: number;
         startMinute: number;
@@ -912,6 +914,11 @@ function TimelineView({
   if (!buckets.has(6)) buckets.set(6, []);
   const orderedModules: CookModule[] = [1, 2, 3, 4, 5, 6];
 
+  // 跨菜「按食材」合并备菜清单：模块一/二用它替换单菜步骤罗列
+  const prepPlan = (plan.prepPlan ?? null) as PrepPlan | null;
+  const groupsForModule = (m: CookModule): PrepGroup[] =>
+    m === 1 || m === 2 ? (prepPlan?.groups.filter((g) => g.module === m) ?? []) : [];
+
   return (
     <div className="space-y-3">
       <Card>
@@ -937,12 +944,23 @@ function TimelineView({
               </ul>
             </div>
           )}
+          {prepPlan?.aiHint && (
+            <div className="rounded-md bg-primary/5 p-2 text-xs">
+              <div className="flex items-center gap-1 font-medium text-primary mb-1">
+                <Sparkles className="size-3" />
+                统筹备菜建议
+              </div>
+              <p className="text-muted-foreground leading-relaxed">{prepPlan.aiHint}</p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
       {orderedModules.map((mod) => {
         const steps = (buckets.get(mod) ?? []).slice().sort((a, b) => a.startMinute - b.startMinute);
-        if (steps.length === 0 && mod !== 6) return null;
+        const groups = groupsForModule(mod);
+        const useGroups = groups.length > 0;
+        if (steps.length === 0 && !useGroups && mod !== 6) return null;
         const info = MODULE_INFO[mod];
         const minStart = steps.length ? steps[0].startMinute : null;
         const maxEnd = steps.length
@@ -962,7 +980,43 @@ function TimelineView({
               <p className="text-xs text-muted-foreground">{info.tip}</p>
             </CardHeader>
             <CardContent>
-              {steps.length === 0 ? (
+              {useGroups ? (
+                <div className="space-y-4">
+                  {groups.map((g) => (
+                    <div key={g.kind} className="space-y-2">
+                      <div className="flex items-baseline gap-2 flex-wrap">
+                        <span className="text-sm font-medium">{g.title}</span>
+                        <span className="text-xs text-muted-foreground">{g.hint}</span>
+                      </div>
+                      <ul className="space-y-1.5">
+                        {g.items.map((it, i) => (
+                          <li
+                            key={i}
+                            className="flex items-baseline gap-2 flex-wrap text-sm border-l-2 border-primary/30 pl-2"
+                          >
+                            <span className="font-medium">{it.ingredient}</span>
+                            {it.totalText && (
+                              <span className="text-xs text-muted-foreground font-mono">
+                                {it.totalText}
+                              </span>
+                            )}
+                            {it.forDishes.length > 0 && (
+                              <span className="flex flex-wrap gap-1">
+                                {it.forDishes.map((fd, j) => (
+                                  <Badge key={j} variant="outline" className="text-xs font-normal">
+                                    {fd.dish}
+                                    {fd.amount ? ` ${fd.amount}` : ""}
+                                  </Badge>
+                                ))}
+                              </span>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              ) : steps.length === 0 ? (
                 <p className="text-xs text-muted-foreground">
                   开饭前盛饭端汤、摆碗筷、热菜上桌
                 </p>
