@@ -26,7 +26,29 @@ export default async function CookSessionPage({
       menus: {
         where: { status: { in: ["DRAFT", "EDITING", "CONFIRMED"] } },
         include: {
-          dishes: { orderBy: { position: "asc" } },
+          dishes: {
+            orderBy: { position: "asc" },
+            include: {
+              dish: {
+                select: {
+                  cuisine: true,
+                  difficulty: true,
+                  totalMinutes: true,
+                  isSoup: true,
+                  isStaple: true,
+                  recipe: {
+                    select: {
+                      ingredients: true,
+                      seasonings: true,
+                      steps: true,
+                      tips: true,
+                      heatNotes: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
           shoppingList: {
             include: {
               items: { orderBy: [{ area: "asc" }, { name: "asc" }] },

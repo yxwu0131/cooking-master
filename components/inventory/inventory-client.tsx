@@ -29,6 +29,7 @@ import {
   deleteInventoryItemsAction,
   clearAllInventoryAction,
   bulkAddInventoryAction,
+  addCustomInventoryItemAction,
 } from "@/lib/actions/inventory";
 import { cn } from "@/lib/utils";
 
@@ -92,6 +93,7 @@ export function InventoryClient({
   const [addOpen, setAddOpen] = React.useState(false);
   const [quickPick, setQuickPick] = React.useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = React.useState("");
+  const [customQty, setCustomQty] = React.useState("1");
   const [selected, setSelected] = React.useState<Set<string>>(new Set());
   const [confirmClear, setConfirmClear] = React.useState(false);
 
@@ -151,6 +153,21 @@ export function InventoryClient({
         setAddOpen(false);
       } else {
         toast.error("添加失败");
+      }
+    });
+  }
+
+  function submitCustomAdd(name: string) {
+    const qty = Number(customQty) || 1;
+    startTransition(async () => {
+      const result = await addCustomInventoryItemAction({ name, quantity: qty });
+      if (result.ok) {
+        toast.success(`已添加「${result.ingredientName}」`);
+        setSearchTerm("");
+        setCustomQty("1");
+        setAddOpen(false);
+      } else {
+        toast.error(result.error);
       }
     });
   }
@@ -443,10 +460,42 @@ export function InventoryClient({
               onChange={(e) => setSearchTerm(e.target.value)}
             />
             <p className="text-xs text-muted-foreground">
-              点击勾选，默认数量 1（添加后可编辑）
+              点击勾选已有食材批量加；库里没有的可在下方手动添加
             </p>
           </div>
           <div className="flex-1 overflow-y-auto space-y-3 -mx-2 px-2">
+            {searchTerm.trim() &&
+              !ingredients.some(
+                (i) => i.name.toLowerCase() === searchTerm.trim().toLowerCase()
+              ) && (
+                <div className="rounded-md border border-dashed border-primary/40 bg-primary/5 p-2.5 space-y-2">
+                  <div className="text-xs text-muted-foreground">
+                    库里没有「{searchTerm.trim()}」？手动添加它：
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium flex-1 truncate">
+                      {searchTerm.trim()}
+                    </span>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="any"
+                      value={customQty}
+                      onChange={(e) => setCustomQty(e.target.value)}
+                      className="w-20 h-8"
+                      placeholder="数量"
+                    />
+                    <Button
+                      size="sm"
+                      onClick={() => submitCustomAdd(searchTerm.trim())}
+                      disabled={pending}
+                    >
+                      <Plus className="size-3.5" />
+                      添加
+                    </Button>
+                  </div>
+                </div>
+              )}
             {Array.from(ingredientsByCat.entries()).map(([cat, list]) => (
               <div key={cat}>
                 <div className="text-xs font-medium text-muted-foreground mb-1.5">

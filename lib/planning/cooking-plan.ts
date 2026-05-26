@@ -162,9 +162,21 @@ export async function generateCookingPlanForMenu(menuId: string) {
 
   // 1. 准备每道菜的元数据
   const dishes = menu.dishes.map((md) => {
-    const rawSteps = ((md.dish.recipe?.steps as RecipeStep[] | null) ?? [])
+    let rawSteps = ((md.dish.recipe?.steps as RecipeStep[] | null) ?? [])
       .slice()
       .sort((a, b) => a.order - b.order);
+    // 兜底：菜谱缺失/为空（如 AI 补菜谱失败）时，至少合成一条烹饪步骤，
+    // 保证这道菜一定出现在时间线里，不会被静默丢掉（漏菜 bug）。
+    if (rawSteps.length === 0) {
+      rawSteps = [
+        {
+          order: 1,
+          action: `制作「${md.dishNameSnapshot}」（菜谱待补全，参考下方菜谱详情）`,
+          durationMinutes: Math.max(5, md.dish.totalMinutes || 15),
+          stepType: "STIR_FRY",
+        },
+      ];
+    }
     const tags = md.dish.tags ?? [];
     const isLeafy =
       md.dish.mainIngredients.some((n) => LEAFY_KEYWORDS.some((leaf) => n.includes(leaf))) ||

@@ -100,6 +100,18 @@ export const menuRecommendInputSchema = z.object({
 
 export type MenuRecommendInput = z.infer<typeof menuRecommendInputSchema>;
 
+// DeepSeek 经常把"适量/少许/半勺/半"等非数字塞进数字字段（尤其调料/缺料 quantity），
+// 这里宽松解析：是数字直接用；是字符串就抽取其中的数值，抽不到则用兜底值。
+const flexNum = (fallback = 0) =>
+  z.preprocess((v) => {
+    if (typeof v === "number") return Number.isFinite(v) ? v : fallback;
+    if (typeof v === "string") {
+      const n = parseFloat(v.replace(/[^\d.\-]/g, ""));
+      return Number.isFinite(n) ? n : fallback;
+    }
+    return fallback;
+  }, z.number());
+
 export const menuPlanSchema = z.object({
   tag: z.string(), // "方案A · 满足家人" / "方案B · 消耗冰箱"
   strategy: z.enum([
@@ -119,7 +131,7 @@ export const menuPlanSchema = z.object({
         missingIngredients: z.array(
           z.object({
             name: z.string(),
-            quantity: z.number(),
+            quantity: flexNum(),
             unit: z.string(),
           })
         ),
@@ -153,18 +165,6 @@ export const recipeGenerateInputSchema = z.object({
 });
 
 export type RecipeGenerateInput = z.infer<typeof recipeGenerateInputSchema>;
-
-// DeepSeek 经常把"适量/少许/半勺"等非数字塞进数字字段（尤其调料 quantity），
-// 这里宽松解析：是数字直接用；是字符串就抽取其中的数值，抽不到则用兜底值。
-const flexNum = (fallback = 0) =>
-  z.preprocess((v) => {
-    if (typeof v === "number") return Number.isFinite(v) ? v : fallback;
-    if (typeof v === "string") {
-      const n = parseFloat(v.replace(/[^\d.\-]/g, ""));
-      return Number.isFinite(n) ? n : fallback;
-    }
-    return fallback;
-  }, z.number());
 
 const stepTypeSchema = z
   .enum([
@@ -214,10 +214,12 @@ export const recipeGenerateOutputSchema = z.object({
       action: z.string(),
       durationMinutes: flexNum(),
       stepType: stepTypeSchema,
-      heat: z.string().optional(),
-      cookware: z.string().optional(),
-      parallel: z.boolean().optional(),
-      dependsOn: z.array(z.number()).optional(),
+      // DeepSeek 常把可选字段显式返回 null（而非省略），用 nullish 兼容 null/undefined，
+      // 否则整条菜谱校验失败 → 骨架菜首次确认补菜谱必崩。
+      heat: z.string().nullish(),
+      cookware: z.string().nullish(),
+      parallel: z.boolean().nullish(),
+      dependsOn: z.array(z.number()).nullish(),
     })
   ),
   tips: z.array(z.string()).default([]),

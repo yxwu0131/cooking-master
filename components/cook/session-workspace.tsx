@@ -15,6 +15,9 @@ import {
   Pencil,
   X,
   Search,
+  Flame,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -84,6 +87,20 @@ type Session = {
       position: number;
       usedInventory: unknown;
       missingIngredients: unknown;
+      dish: {
+        cuisine: string | null;
+        difficulty: number;
+        totalMinutes: number;
+        isSoup: boolean;
+        isStaple: boolean;
+        recipe: {
+          ingredients: unknown;
+          seasonings: unknown;
+          steps: unknown;
+          tips: string[];
+          heatNotes: string | null;
+        } | null;
+      } | null;
     }>;
     shoppingList: {
       id: string;
@@ -185,13 +202,6 @@ export function SessionWorkspace({
   const confirmedMenu = session.menus.find((m) => m.status === "CONFIRMED");
   const isChef = session.chefId === currentUserId;
 
-  // 把全库菜品做成 name→meta 映射，供时间线按模块分组用
-  const dishMetaByName = React.useMemo(() => {
-    const m = new Map<string, DishMeta>();
-    for (const d of allDishes) m.set(d.name, d);
-    return m;
-  }, [allDishes]);
-
   return (
     <div className="space-y-4">
       <SessionHeader session={session} isChef={isChef} />
@@ -217,12 +227,7 @@ export function SessionWorkspace({
       )}
 
       {confirmedMenu && (
-        <ConfirmedMenuView
-          session={session}
-          menu={confirmedMenu}
-          isChef={isChef}
-          dishMetaByName={dishMetaByName}
-        />
+        <ConfirmedMenuView session={session} menu={confirmedMenu} isChef={isChef} />
       )}
 
       {confirmedMenu && (session.status === "DONE" || session.status === "COOKING") && (
@@ -762,12 +767,10 @@ function ConfirmedMenuView({
   session,
   menu,
   isChef,
-  dishMetaByName,
 }: {
   session: Session;
   menu: NonNullable<Session["menus"][number]>;
   isChef: boolean;
-  dishMetaByName: Map<string, DishMeta>;
 }) {
   const [pending, startTransition] = React.useTransition();
 
@@ -833,7 +836,7 @@ function ConfirmedMenuView({
           <TabsTrigger value="shopping">采购清单</TabsTrigger>
         </TabsList>
         <TabsContent value="timeline" className="mt-4">
-          <TimelineView plan={menu.cookingPlan} dishMetaByName={dishMetaByName} />
+          <TimelineView plan={menu.cookingPlan} menuDishes={menu.dishes} />
         </TabsContent>
         <TabsContent value="shopping" className="mt-4">
           <ShoppingListView list={menu.shoppingList} />
@@ -843,54 +846,171 @@ function ConfirmedMenuView({
   );
 }
 
-// 6 模块分类（基于用户给定结构）
-type CookModule = 1 | 2 | 3 | 4 | 5 | 6;
-const MODULE_INFO: Record<CookModule, { title: string; tip: string }> = {
-  1: { title: "模块一 · 启动等待型", tip: "先把要等时间的事开起来：淘米煮饭、泡发、腌制、烧水" },
-  2: { title: "模块二 · 集中备菜", tip: "把所有菜一次性切配上浆好，避免边切边炒" },
-  3: { title: "模块三 · 提前完成冷菜", tip: "先做不怕凉的菜，先稳一道" },
-  4: { title: "模块四 · 启动蒸煮", tip: "蒸鱼 / 煮汤 / 炖菜走起，不占炒锅" },
-  5: { title: "模块五 · 连续快炒", tip: "炒菜冲刺，出锅即上桌；叶菜压轴" },
-  6: { title: "模块六 · 收尾上桌", tip: "盛饭端汤摆碗筷" },
+// 两阶段做饭模型：备菜统一准备 → 烹饪。
+// 备菜阶段的步骤类型（这些不进烹饪时间线，统一在「备菜」阶段一次性完成）
+const PREP_STEP_TYPES = new Set(["PREP", "MARINATE", "SOAK", "BLANCH", "CLEAN"]);
+
+type RecipeIngLite = { name: string; quantity?: number; unit?: string; optional?: boolean };
+type RecipeStepLite = {
+  order?: number;
+  action: string;
+  durationMinutes?: number;
+  stepType?: string;
+  heat?: string;
+  cookware?: string;
 };
 
-function classifyStepToModule(
-  step: NonNullable<Session["menus"][number]["cookingPlan"]>["steps"][number],
-  dish: DishMeta | undefined
-): CookModule {
-  const action = step.action;
-  const cw = step.cookware ?? "";
-  const t = step.stepType;
-  const isCold =
-    !!dish &&
-    (dish.name.includes("凉拌") || dish.name.includes("冷盘") || dish.name.includes("沙拉"));
-  // 1. 启动等待型：淘米煮饭、泡发、腌制、烧水
-  if (t === "SOAK" || t === "MARINATE") return 1;
-  if (cw.includes("电饭锅")) return 1;
-  if (dish?.isStaple) return 1;
-  if (/烧.*水|烧开水|备水/.test(action)) return 1;
-  // 3. 冷菜（凉菜）：focal 步骤算 3
-  if (isCold && (t === "BLANCH" || t === "PLATE" || t === "STIR_FRY" || t === "PREP")) return 3;
-  // 2. 集中备菜
-  if (t === "PREP" || t === "BLANCH") return 2;
-  // 4. 蒸煮
-  if (t === "STEAM" || t === "BRAISE") return 4;
-  if (t === "BOIL") {
-    if (dish?.isSoup) return 4;
-    if (step.durationMinutes >= 8) return 4;
-  }
-  // 6. 收尾
-  if (t === "PLATE" || /出锅|装盘|上桌|盛饭|端汤/.test(action)) return 6;
-  // 5. 快炒（默认）
-  return 5;
+function asIngList(v: unknown): RecipeIngLite[] {
+  return Array.isArray(v) ? (v as RecipeIngLite[]) : [];
+}
+function asStepList(v: unknown): RecipeStepLite[] {
+  return Array.isArray(v) ? (v as RecipeStepLite[]) : [];
+}
+
+type CookGroup = {
+  dishName: string;
+  steps: NonNullable<Session["menus"][number]["cookingPlan"]>["steps"];
+  startMinute: number;
+  endMinute: number;
+};
+
+type MenuDishRecipe = NonNullable<Session["menus"][number]["dishes"][number]["dish"]>["recipe"];
+
+/** 烹饪阶段：每道菜一张卡，展示下锅时间 + 时间线动作 + 可展开的完整菜谱详情 */
+function DishCookCard({ group, recipe }: { group: CookGroup; recipe: MenuDishRecipe | null }) {
+  const [open, setOpen] = React.useState(false);
+  const ings = asIngList(recipe?.ingredients);
+  const seas = asIngList(recipe?.seasonings);
+  const fullSteps = asStepList(recipe?.steps);
+  const tips = recipe?.tips ?? [];
+  const hasRecipe = ings.length > 0 || fullSteps.length > 0;
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <div className="flex items-baseline justify-between gap-2 flex-wrap">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Flame className="size-4 text-orange-500" />
+            {group.dishName}
+          </CardTitle>
+          <span className="text-xs text-muted-foreground font-mono">
+            第 {group.startMinute}~{group.endMinute} 分钟
+          </span>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        <ol className="relative border-l border-border ml-3 space-y-2.5">
+          {group.steps.map((s) => (
+            <li key={s.order} className="ml-5 relative">
+              <span className="absolute -left-[1.85rem] top-0 size-5 rounded-full bg-orange-500/10 text-orange-600 dark:text-orange-400 text-[10px] font-semibold flex items-center justify-center">
+                {s.startMinute}
+              </span>
+              <p className="text-sm">{s.action}</p>
+              <div className="flex flex-wrap gap-1.5 text-xs text-muted-foreground">
+                <span>{s.durationMinutes} 分钟</span>
+                {s.cookware && <span>· {s.cookware}</span>}
+                {s.heat && <span>· {s.heat}</span>}
+              </div>
+              {s.reminders.length > 0 && (
+                <div className="text-xs text-amber-700 dark:text-amber-400">
+                  💡 {s.reminders.join("；")}
+                </div>
+              )}
+            </li>
+          ))}
+        </ol>
+
+        {hasRecipe && (
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            className="flex items-center gap-1 text-xs text-primary hover:underline pt-1"
+          >
+            {open ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
+            {open ? "收起菜谱详情" : "查看完整菜谱（食材 / 调料 / 做法）"}
+          </button>
+        )}
+
+        {open && hasRecipe && (
+          <div className="rounded-md bg-muted/40 p-3 space-y-3 text-sm">
+            {(ings.length > 0 || seas.length > 0) && (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {ings.length > 0 && (
+                  <div>
+                    <div className="text-xs font-medium text-muted-foreground mb-1">食材</div>
+                    <ul className="space-y-0.5">
+                      {ings.map((it, i) => (
+                        <li key={i} className="flex justify-between gap-2">
+                          <span>
+                            {it.name}
+                            {it.optional ? "（可选）" : ""}
+                          </span>
+                          <span className="text-muted-foreground font-mono text-xs">
+                            {it.quantity ?? ""}
+                            {it.unit ?? ""}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {seas.length > 0 && (
+                  <div>
+                    <div className="text-xs font-medium text-muted-foreground mb-1">调料</div>
+                    <ul className="space-y-0.5">
+                      {seas.map((it, i) => (
+                        <li key={i} className="flex justify-between gap-2">
+                          <span>{it.name}</span>
+                          <span className="text-muted-foreground font-mono text-xs">
+                            {it.quantity ?? ""}
+                            {it.unit ?? ""}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+            {fullSteps.length > 0 && (
+              <div>
+                <div className="text-xs font-medium text-muted-foreground mb-1">详细做法</div>
+                <ol className="space-y-1 list-decimal list-inside">
+                  {fullSteps.map((st, i) => (
+                    <li key={i}>
+                      {st.action}
+                      {(st.heat || st.cookware) && (
+                        <span className="text-xs text-muted-foreground">
+                          {" "}
+                          （{[st.cookware, st.heat].filter(Boolean).join(" · ")}）
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
+            {tips.length > 0 && (
+              <div className="text-xs text-amber-700 dark:text-amber-400">
+                💡 {tips.join("；")}
+              </div>
+            )}
+            {recipe?.heatNotes && (
+              <div className="text-xs text-muted-foreground">🔥 火候：{recipe.heatNotes}</div>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
 }
 
 function TimelineView({
   plan,
-  dishMetaByName,
+  menuDishes,
 }: {
   plan: Session["menus"][number]["cookingPlan"];
-  dishMetaByName: Map<string, DishMeta>;
+  menuDishes: Session["menus"][number]["dishes"];
 }) {
   if (!plan) {
     return (
@@ -902,22 +1022,40 @@ function TimelineView({
     );
   }
 
-  // 按 6 模块归类，每个模块内按 startMinute 升序
-  const buckets = new Map<CookModule, typeof plan.steps>();
-  for (const s of plan.steps) {
-    const dish = s.dishName ? dishMetaByName.get(s.dishName) : undefined;
-    const mod = classifyStepToModule(s, dish);
-    if (!buckets.has(mod)) buckets.set(mod, []);
-    buckets.get(mod)!.push(s);
-  }
-  // 「收尾上桌」模块如果空，server 没有生成 PLATE 步骤，UI 给个占位提示
-  if (!buckets.has(6)) buckets.set(6, []);
-  const orderedModules: CookModule[] = [1, 2, 3, 4, 5, 6];
-
-  // 跨菜「按食材」合并备菜清单：模块一/二用它替换单菜步骤罗列
   const prepPlan = (plan.prepPlan ?? null) as PrepPlan | null;
-  const groupsForModule = (m: CookModule): PrepGroup[] =>
-    m === 1 || m === 2 ? (prepPlan?.groups.filter((g) => g.module === m) ?? []) : [];
+  const recipeByName = new Map(
+    menuDishes.map((md) => [md.dishNameSnapshot, md.dish?.recipe ?? null])
+  );
+
+  // 备菜阶段：统一一次性准备。优先用跨菜合并清单（按食材聚合），
+  // 没有则回退到 plan 里的备菜类步骤逐条列出。
+  const prepGroups: PrepGroup[] = prepPlan?.groups ?? [];
+  const prepFallback = prepGroups.length
+    ? []
+    : plan.steps
+        .filter((s) => PREP_STEP_TYPES.has(s.stepType ?? ""))
+        .slice()
+        .sort((a, b) => a.startMinute - b.startMinute);
+
+  // 烹饪阶段：排除备菜类步骤，按菜分组，每道菜按下锅时间排序
+  const cookGroupMap = new Map<string, NonNullable<typeof plan>["steps"]>();
+  for (const s of plan.steps) {
+    if (PREP_STEP_TYPES.has(s.stepType ?? "")) continue;
+    const key = s.dishName ?? "其他";
+    if (!cookGroupMap.has(key)) cookGroupMap.set(key, []);
+    cookGroupMap.get(key)!.push(s);
+  }
+  const cookGroups: CookGroup[] = [...cookGroupMap.entries()]
+    .map(([dishName, steps]) => {
+      const sorted = steps.slice().sort((a, b) => a.startMinute - b.startMinute);
+      return {
+        dishName,
+        steps: sorted,
+        startMinute: sorted[0]?.startMinute ?? 0,
+        endMinute: Math.max(...sorted.map((s) => s.startMinute + s.durationMinutes)),
+      };
+    })
+    .sort((a, b) => a.startMinute - b.startMinute);
 
   return (
     <div className="space-y-3">
@@ -944,6 +1082,23 @@ function TimelineView({
               </ul>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* 阶段一 · 备菜（统一一次性准备） */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <span className="size-5 rounded-full bg-primary/10 text-primary text-xs font-semibold flex items-center justify-center">
+              1
+            </span>
+            备菜 · 统一准备
+          </CardTitle>
+          <p className="text-xs text-muted-foreground">
+            所有菜的洗切、腌制、泡发一次性做完，再开火——别做一道切一道
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4">
           {prepPlan?.aiHint && (
             <div className="rounded-md bg-primary/5 p-2 text-xs">
               <div className="flex items-center gap-1 font-medium text-primary mb-1">
@@ -953,112 +1108,78 @@ function TimelineView({
               <p className="text-muted-foreground leading-relaxed">{prepPlan.aiHint}</p>
             </div>
           )}
+          {prepGroups.length > 0 ? (
+            prepGroups.map((g) => (
+              <div key={g.kind} className="space-y-2">
+                <div className="flex items-baseline gap-2 flex-wrap">
+                  <span className="text-sm font-medium">{g.title}</span>
+                  <span className="text-xs text-muted-foreground">{g.hint}</span>
+                </div>
+                <ul className="space-y-1.5">
+                  {g.items.map((it, i) => (
+                    <li
+                      key={i}
+                      className="flex items-baseline gap-2 flex-wrap text-sm border-l-2 border-primary/30 pl-2"
+                    >
+                      <span className="font-medium">{it.ingredient}</span>
+                      {it.totalText && (
+                        <span className="text-xs text-muted-foreground font-mono">
+                          {it.totalText}
+                        </span>
+                      )}
+                      {it.forDishes.length > 0 && (
+                        <span className="flex flex-wrap gap-1">
+                          {it.forDishes.map((fd, j) => (
+                            <Badge key={j} variant="outline" className="text-xs font-normal">
+                              {fd.dish}
+                              {fd.amount ? ` ${fd.amount}` : ""}
+                            </Badge>
+                          ))}
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))
+          ) : prepFallback.length > 0 ? (
+            <ul className="space-y-1.5">
+              {prepFallback.map((s) => (
+                <li key={s.order} className="text-sm border-l-2 border-primary/30 pl-2">
+                  <span className="font-medium">{s.dishName}</span>
+                  <span className="text-muted-foreground"> · {s.action}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-xs text-muted-foreground">这餐无需提前备菜，直接开火即可</p>
+          )}
         </CardContent>
       </Card>
 
-      {orderedModules.map((mod) => {
-        const steps = (buckets.get(mod) ?? []).slice().sort((a, b) => a.startMinute - b.startMinute);
-        const groups = groupsForModule(mod);
-        const useGroups = groups.length > 0;
-        if (steps.length === 0 && !useGroups && mod !== 6) return null;
-        const info = MODULE_INFO[mod];
-        const minStart = steps.length ? steps[0].startMinute : null;
-        const maxEnd = steps.length
-          ? Math.max(...steps.map((s) => s.startMinute + s.durationMinutes))
-          : null;
-        return (
-          <Card key={mod}>
-            <CardHeader className="pb-2">
-              <div className="flex items-baseline justify-between gap-2 flex-wrap">
-                <CardTitle className="text-sm">{info.title}</CardTitle>
-                {minStart !== null && (
-                  <span className="text-xs text-muted-foreground font-mono">
-                    +{minStart}~+{maxEnd}min
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground">{info.tip}</p>
-            </CardHeader>
-            <CardContent>
-              {useGroups ? (
-                <div className="space-y-4">
-                  {groups.map((g) => (
-                    <div key={g.kind} className="space-y-2">
-                      <div className="flex items-baseline gap-2 flex-wrap">
-                        <span className="text-sm font-medium">{g.title}</span>
-                        <span className="text-xs text-muted-foreground">{g.hint}</span>
-                      </div>
-                      <ul className="space-y-1.5">
-                        {g.items.map((it, i) => (
-                          <li
-                            key={i}
-                            className="flex items-baseline gap-2 flex-wrap text-sm border-l-2 border-primary/30 pl-2"
-                          >
-                            <span className="font-medium">{it.ingredient}</span>
-                            {it.totalText && (
-                              <span className="text-xs text-muted-foreground font-mono">
-                                {it.totalText}
-                              </span>
-                            )}
-                            {it.forDishes.length > 0 && (
-                              <span className="flex flex-wrap gap-1">
-                                {it.forDishes.map((fd, j) => (
-                                  <Badge key={j} variant="outline" className="text-xs font-normal">
-                                    {fd.dish}
-                                    {fd.amount ? ` ${fd.amount}` : ""}
-                                  </Badge>
-                                ))}
-                              </span>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
-                </div>
-              ) : steps.length === 0 ? (
-                <p className="text-xs text-muted-foreground">
-                  开饭前盛饭端汤、摆碗筷、热菜上桌
-                </p>
-              ) : (
-                <ol className="relative border-l border-border ml-3 space-y-3">
-                  {steps.map((s) => (
-                    <li key={s.order} className="ml-6 relative">
-                      <span className="absolute -left-9 top-0 size-6 rounded-full bg-primary/10 text-primary text-xs font-semibold flex items-center justify-center">
-                        {s.startMinute}
-                      </span>
-                      <div className="space-y-1">
-                        <div className="flex items-baseline gap-2 flex-wrap">
-                          <span className="text-xs text-muted-foreground font-mono">
-                            +{s.startMinute}分钟
-                          </span>
-                          <span className="font-medium">{s.dishName}</span>
-                          {s.isParallel && (
-                            <Badge variant="outline" className="text-xs">
-                              并行
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-sm">{s.action}</p>
-                        <div className="flex flex-wrap gap-1.5 text-xs text-muted-foreground">
-                          <span>{s.durationMinutes} 分钟</span>
-                          {s.cookware && <span>· {s.cookware}</span>}
-                          {s.heat && <span>· {s.heat}</span>}
-                        </div>
-                        {s.reminders.length > 0 && (
-                          <div className="text-xs text-amber-700 dark:text-amber-400">
-                            💡 {s.reminders.join("；")}
-                          </div>
-                        )}
-                      </div>
-                    </li>
-                  ))}
-                </ol>
-              )}
+      {/* 阶段二 · 烹饪（按下锅顺序，每道菜一张卡 + 完整菜谱） */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 px-1">
+          <span className="size-5 rounded-full bg-orange-500/15 text-orange-600 dark:text-orange-400 text-xs font-semibold flex items-center justify-center">
+            2
+          </span>
+          <span className="text-sm font-medium">烹饪 · 按下锅顺序</span>
+          <span className="text-xs text-muted-foreground">
+            先开不占手的（饭/炖/蒸），叶菜和汤压轴；点开看完整做法
+          </span>
+        </div>
+        {cookGroups.length === 0 ? (
+          <Card>
+            <CardContent className="py-6 text-center text-sm text-muted-foreground">
+              暂无烹饪步骤
             </CardContent>
           </Card>
-        );
-      })}
+        ) : (
+          cookGroups.map((g) => (
+            <DishCookCard key={g.dishName} group={g} recipe={recipeByName.get(g.dishName) ?? null} />
+          ))
+        )}
+      </div>
     </div>
   );
 }

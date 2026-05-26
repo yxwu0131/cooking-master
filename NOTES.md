@@ -458,3 +458,32 @@
   - UI `session-workspace.tsx:TimelineView`：模块1/2 有 prepPlan 时渲染"按食材"清单（食材→总量→分给哪几道菜的 Badge），模块3-6 保持按菜步骤；旧计划 prepPlan 为 null 时回退原渲染。
 - **要看到新效果需重新生成做饭计划**（旧计划无 prepPlan）。
 
+---
+
+## 2026-05-26 本批改动 dev 点测（浏览器全流程）+ 两个 LLM 输出兼容坑
+
+> 用 CDP 浏览器走完整流程验证 2026-05-24 那批改动（时间线两阶段 / 漏菜兜底 / 牛肉焖饭不重复煮饭 / 库存手动加食材），过程中又揪出两个会阻断核心流程的 LLM 输出兼容坑（坑23 同源、未覆盖到的字段）。
+
+### 验证结论（4 项改动全过）
+- **时间线两阶段**：「①备菜·统一准备（统筹建议 + 按 canonical 食材横向合并洗切，如「大蒜 共5瓣 → 青椒土豆丝2瓣 / 醋溜白菜3瓣」）→ ②烹饪·按下锅顺序（饭/炖/蒸先开，叶菜/汤压轴）」渲染正确；每道菜「查看完整菜谱」可展开食材/调料/分步做法/火候厨具。✓
+- **漏菜兜底**：骨架菜（无菜谱）仍出现在时间线，显示合成步骤「制作「X」（菜谱待补全…）」。✓
+- **牛肉焖饭不重复煮饭**：AI 推荐里含牛肉焖饭的方案没有再被补一份白米饭（仅无主食的方案才补）。✓
+- **库存手动加食材**：搜不到的食材出现「库里没有「霸王龙肉」？手动添加它」入口，点添加后自动归类（含"肉"→肉类/冷藏）并入库。✓
+
+### 坑 24：`missingIngredients.quantity` 是字符串（"半"）致 recommendMenu 整条 schema 校验失败 → 推荐流程全崩
+- **现象（2026-05-26）**：点「AI 推荐菜单」必报「AI 推荐失败」。dev log：`[ai.recommendMenu] schema 校验失败`，path 全是 `plans.N.dishes.M.missingIngredients.K.quantity`，`expected number, received string`。raw 里见 `{"name":"洋葱","quantity":"半","unit":"个"}`。
+- **根因**：坑 23 的 `flexNum` 当时只补到了菜谱生成 schema（recipe ingredients/seasonings quantity），**没覆盖到推荐 schema 的 `menuPlanSchema.dishes[].missingIngredients[].quantity`**，那里仍是裸 `z.number()`。DeepSeek 给缺料的量常返回"半/适量/少许"等中文。
+- **解法**：把 `flexNum` 定义上移到 `menuPlanSchema` 之前（它是 `const` 箭头函数、不会被 hoist，原来定义在 recipe schema 那段、在 menuPlanSchema 之后用不了），`missingIngredients.quantity` 改用 `flexNum()`。`menuRecommendInputSchema` 的 inventory.quantity 不用改（那是我们自己从 DB 构造的，恒为数字）。
+- **教训**：对接 LLM 的**所有**结构化输出里的数字字段都要 flexNum，别只补一处；加新 schema/新数字字段时默认就用 flexNum。
+
+### 坑 25：菜谱步骤 `heat/cookware` 被 DeepSeek 显式返回 `null`（而非省略）致 generateRecipe 校验失败 → 骨架菜首次补菜谱必崩
+- **现象（2026-05-26）**：确认含骨架菜（如「牛肉焖饭」）的菜单时，`[ensureRecipes] 生成「牛肉焖饭」菜谱失败: AI 返回的菜谱格式不正确`；issues 全是 `steps.N.heat` / `steps.N.cookware`：`expected string, received null`。（该菜走漏菜兜底仍出现在时间线，但没有真菜谱。）
+- **根因**：`recipeGenerateOutputSchema` 里 step 的 `heat`/`cookware`/`parallel`/`dependsOn` 是 `.optional()`（容忍 undefined）但**不容忍 null**；DeepSeek 对没有火候/厨具的步骤（如电饭煲焖饭）会显式给 `null` 而不是省略字段。
+- **解法**：这四个字段改 `.nullish()`（= optional + nullable）。下游消费处（cooking-plan.ts 的 `?? ""`/`?? null`、PlannedStep 内部转换给 `dependsOn` 兜底 `[]`）已能吃 null，tsc 通过。修后重跑：「牛肉焖饭」成功补出完整菜谱（牛腩300g/大米250g + 分步火候），时间线不再显示"菜谱待补全"。
+- **教训**：LLM 的可选字段要用 `.nullish()` 不是 `.optional()`——模型经常把"无值"表达成显式 `null`。这与坑 23/坑 24 是同一类「LLM 输出宽松解析」问题。
+
+### 备注：非阻断观察（留待 UI 美化阶段）
+- 采购"需买"里把"适量/少许"解析成 `0`（flexNum 兜底），显示成「盐 0」略丑——可在 UI 层把数量为 0 的调料显示成"适量"。
+- 时间线顶部说明文案有处仍写「【三阶段】先切配→…」，但实际渲染就是两个模块（备菜+烹饪），属文案口径未对齐，非结构问题。
+- 本地点测在 `测试家`（test@cooking.local）这个一次性账号下进行；为登录临时把它的密码设为已知值（仅本地 DB）。点测产生的 2 个 session + 给骨架菜补的菜谱都留在本地库，无害。
+

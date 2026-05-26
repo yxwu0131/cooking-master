@@ -57,6 +57,7 @@ export async function generateMenuPlansAction(sessionId: string) {
           mainIngredients: true,
           totalMinutes: true,
           difficulty: true,
+          isStaple: true,
           id: true,
         },
       }),
@@ -204,6 +205,8 @@ export async function generateMenuPlansAction(sessionId: string) {
 
   // 写入新菜单
   const dishNameToId = new Map(dishes.map((d) => [d.name, d.id]));
+  // 已知主食菜（库里标了 isStaple 的，如「白米饭」「牛肉焖饭」「扬州炒饭」）
+  const stapleNames = new Set(dishes.filter((d) => d.isStaple).map((d) => d.name));
 
   // 主食兜底：午餐/晚餐若 AI 漏了主食，自动补一份「白米饭」
   const needStaple = ["LUNCH", "DINNER"].includes(session.mealType);
@@ -217,8 +220,14 @@ export async function generateMenuPlansAction(sessionId: string) {
   }
   for (const plan of aiOutput.plans) {
     if (!needStaple || !stapleDishMeta) continue;
-    const hasStaple = plan.dishes.some((d) =>
-      /米饭|面条|馒头|饺子|包子|粥|米粉|河粉|馄饨|面包/.test(d.name)
+    // 判主食：①库里标了 isStaple 的菜名；②菜名含主食特征词。
+    // 注意「牛肉焖饭/炒饭/盖饭/煲仔饭」等本身就是主食，旧正则只认「米饭」会漏判→重复补饭。
+    const hasStaple = plan.dishes.some(
+      (d) =>
+        stapleNames.has(d.name) ||
+        /饭|面条|拌面|捞面|炒面|汤面|烩面|刀削面|焖面|米粉|河粉|米线|酸辣粉|螺蛳粉|馒头|饺子|包子|粥|馄饨|面包|烧麦|花卷|年糕|泡馍|手抓/.test(
+          d.name
+        )
     );
     if (!hasStaple) {
       plan.dishes.push({

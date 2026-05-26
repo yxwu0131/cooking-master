@@ -274,6 +274,116 @@ const INGREDIENTS: IngredientSeed[] = [
   { name: "面包糠", category: "SEASONING", unit: "g", aliases: [], shoppingArea: "DRY_GOODS" },
   { name: "咖喱粉", category: "SEASONING", unit: "g", aliases: [], shoppingArea: "DRY_GOODS" },
   { name: "咖喱块", category: "SEASONING", unit: "g", aliases: [], shoppingArea: "DRY_GOODS" },
+
+  // —— 扩充：蔬菜 ——
+  { name: "荷兰豆", category: "VEGETABLE", unit: "g", aliases: [], shoppingArea: "VEGETABLE", shelfLifeDays: 5 },
+  { name: "茭白", category: "VEGETABLE", unit: "根", aliases: [], shoppingArea: "VEGETABLE", shelfLifeDays: 7 },
+  { name: "西葫芦", category: "VEGETABLE", unit: "个", aliases: ["角瓜"], shoppingArea: "VEGETABLE", shelfLifeDays: 10 },
+  { name: "豌豆", category: "VEGETABLE", unit: "g", aliases: ["青豆"], shoppingArea: "VEGETABLE", shelfLifeDays: 5 },
+  { name: "小米椒", category: "VEGETABLE", unit: "g", aliases: ["朝天椒"], shoppingArea: "VEGETABLE", shelfLifeDays: 10 },
+  { name: "杭椒", category: "VEGETABLE", unit: "g", aliases: [], shoppingArea: "VEGETABLE", shelfLifeDays: 7 },
+  { name: "蒜苗", category: "VEGETABLE", unit: "根", aliases: ["青蒜"], shoppingArea: "VEGETABLE", shelfLifeDays: 7 },
+  { name: "韭黄", category: "VEGETABLE", unit: "g", aliases: [], shoppingArea: "VEGETABLE", shelfLifeDays: 4 },
+  { name: "荸荠", category: "VEGETABLE", unit: "g", aliases: ["马蹄"], shoppingArea: "VEGETABLE", shelfLifeDays: 14 },
+  { name: "秋葵", category: "VEGETABLE", unit: "g", aliases: [], shoppingArea: "VEGETABLE", shelfLifeDays: 5 },
+  { name: "春笋", category: "VEGETABLE", unit: "根", aliases: [], shoppingArea: "VEGETABLE", shelfLifeDays: 7 },
+  { name: "冬笋", category: "VEGETABLE", unit: "根", aliases: [], shoppingArea: "VEGETABLE", shelfLifeDays: 10 },
+  { name: "百合", category: "VEGETABLE", unit: "g", aliases: ["鲜百合"], shoppingArea: "VEGETABLE", shelfLifeDays: 7 },
+
+  // —— 扩充：水果 ——
+  { name: "西瓜", category: "FRUIT", unit: "个", aliases: [], shoppingArea: "VEGETABLE", shelfLifeDays: 7 },
+  { name: "芒果", category: "FRUIT", unit: "个", aliases: [], shoppingArea: "VEGETABLE", shelfLifeDays: 7 },
+  { name: "火龙果", category: "FRUIT", unit: "个", aliases: [], shoppingArea: "VEGETABLE", shelfLifeDays: 7 },
+  { name: "猕猴桃", category: "FRUIT", unit: "个", aliases: ["奇异果"], shoppingArea: "VEGETABLE", shelfLifeDays: 10 },
+  { name: "柚子", category: "FRUIT", unit: "个", aliases: [], shoppingArea: "VEGETABLE", shelfLifeDays: 20 },
+  { name: "牛油果", category: "FRUIT", unit: "个", aliases: ["鳄梨"], shoppingArea: "VEGETABLE", shelfLifeDays: 7 },
+
+  // —— 扩充：肉类（含加工/杂） ——
+  { name: "牛肚", category: "MEAT", unit: "g", aliases: [], shoppingArea: "MEAT", shelfLifeDays: 3 },
+  { name: "毛肚", category: "MEAT", unit: "g", aliases: [], shoppingArea: "MEAT", shelfLifeDays: 3 },
+  { name: "羊蝎子", category: "MEAT", unit: "g", aliases: [], shoppingArea: "MEAT", shelfLifeDays: 3 },
+  { name: "猪肚", category: "MEAT", unit: "个", aliases: [], shoppingArea: "MEAT", shelfLifeDays: 3 },
+  { name: "午餐肉", category: "MEAT", unit: "罐", aliases: [], shoppingArea: "DRY_GOODS", shelfLifeDays: 180 },
+  { name: "鸭血", category: "MEAT", unit: "块", aliases: [], shoppingArea: "MEAT", shelfLifeDays: 3 },
+  { name: "腊肠", category: "MEAT", unit: "根", aliases: ["广式香肠"], shoppingArea: "MEAT", shelfLifeDays: 60 },
+
+  // —— 扩充：禽类 ——
+  { name: "乌鸡", category: "POULTRY", unit: "只", aliases: [], shoppingArea: "MEAT", shelfLifeDays: 3 },
+  { name: "鸡肝", category: "POULTRY", unit: "g", aliases: [], shoppingArea: "MEAT", shelfLifeDays: 2 },
+
+  // —— 扩充：水产 ——
+  { name: "多宝鱼", category: "SEAFOOD", unit: "条", aliases: ["大菱鲆"], shoppingArea: "SEAFOOD", shelfLifeDays: 2 },
+  { name: "黑鱼", category: "SEAFOOD", unit: "条", aliases: ["乌鱼"], shoppingArea: "SEAFOOD", shelfLifeDays: 2 },
+  { name: "鲤鱼", category: "SEAFOOD", unit: "条", aliases: [], shoppingArea: "SEAFOOD", shelfLifeDays: 2 },
+  { name: "龙利鱼", category: "SEAFOOD", unit: "g", aliases: ["巴沙鱼"], shoppingArea: "FROZEN", shelfLifeDays: 30 },
+  { name: "鳕鱼", category: "SEAFOOD", unit: "g", aliases: [], shoppingArea: "FROZEN", shelfLifeDays: 30 },
+  { name: "大虾", category: "SEAFOOD", unit: "g", aliases: ["对虾", "明虾"], shoppingArea: "SEAFOOD", shelfLifeDays: 2 },
+  { name: "海参", category: "SEAFOOD", unit: "只", aliases: [], shoppingArea: "SEAFOOD", shelfLifeDays: 3 },
+  { name: "鲍鱼", category: "SEAFOOD", unit: "只", aliases: [], shoppingArea: "SEAFOOD", shelfLifeDays: 2 },
+  { name: "蛏子", category: "SEAFOOD", unit: "g", aliases: [], shoppingArea: "SEAFOOD", shelfLifeDays: 2 },
+  { name: "墨鱼", category: "SEAFOOD", unit: "g", aliases: ["乌贼"], shoppingArea: "SEAFOOD", shelfLifeDays: 2 },
+  { name: "黄鱼", category: "SEAFOOD", unit: "条", aliases: ["黄花鱼"], shoppingArea: "SEAFOOD", shelfLifeDays: 2 },
+
+  // —— 扩充：蛋奶/豆制品 ——
+  { name: "炼乳", category: "EGG_DAIRY", unit: "g", aliases: [], shoppingArea: "DAIRY", shelfLifeDays: 90 },
+  { name: "芝士片", category: "EGG_DAIRY", unit: "片", aliases: ["奶酪片"], shoppingArea: "DAIRY", shelfLifeDays: 30 },
+  { name: "素鸡", category: "SOY", unit: "块", aliases: [], shoppingArea: "SOY", shelfLifeDays: 5 },
+  { name: "臭豆腐", category: "SOY", unit: "块", aliases: [], shoppingArea: "SOY", shelfLifeDays: 5 },
+
+  // —— 扩充：主食/谷物 ——
+  { name: "红薯粉", category: "GRAIN", unit: "g", aliases: ["红薯粉条"], shoppingArea: "DRY_GOODS", shelfLifeDays: 180 },
+  { name: "碱水面", category: "GRAIN", unit: "g", aliases: ["热干面"], shoppingArea: "GRAIN", shelfLifeDays: 7 },
+  { name: "挂面", category: "GRAIN", unit: "g", aliases: [], shoppingArea: "GRAIN", shelfLifeDays: 365 },
+  { name: "米线", category: "GRAIN", unit: "g", aliases: [], shoppingArea: "GRAIN", shelfLifeDays: 7 },
+  { name: "方便面", category: "GRAIN", unit: "包", aliases: [], shoppingArea: "DRY_GOODS", shelfLifeDays: 120 },
+  { name: "手抓饼", category: "GRAIN", unit: "张", aliases: [], shoppingArea: "FROZEN", shelfLifeDays: 90 },
+  { name: "春卷皮", category: "GRAIN", unit: "张", aliases: [], shoppingArea: "FROZEN", shelfLifeDays: 60 },
+  { name: "糯米粉", category: "GRAIN", unit: "g", aliases: [], shoppingArea: "GRAIN", shelfLifeDays: 180 },
+  { name: "玉米面", category: "GRAIN", unit: "g", aliases: [], shoppingArea: "GRAIN", shelfLifeDays: 180 },
+  { name: "汉堡胚", category: "GRAIN", unit: "个", aliases: ["汉堡坯"], shoppingArea: "GRAIN", shelfLifeDays: 5 },
+  { name: "吐司", category: "GRAIN", unit: "片", aliases: ["吐司面包"], shoppingArea: "GRAIN", shelfLifeDays: 5 },
+  { name: "皮带面", category: "GRAIN", unit: "g", aliases: ["裤带面", "biangbiang面"], shoppingArea: "GRAIN", shelfLifeDays: 5 },
+
+  // —— 扩充：干货/豆类 ——
+  { name: "黄豆", category: "DRY_GOODS", unit: "g", aliases: ["大豆"], shoppingArea: "DRY_GOODS", shelfLifeDays: 365 },
+  { name: "红豆", category: "DRY_GOODS", unit: "g", aliases: ["赤小豆"], shoppingArea: "DRY_GOODS", shelfLifeDays: 365 },
+  { name: "绿豆", category: "DRY_GOODS", unit: "g", aliases: [], shoppingArea: "DRY_GOODS", shelfLifeDays: 365 },
+  { name: "花生", category: "DRY_GOODS", unit: "g", aliases: ["花生米"], shoppingArea: "DRY_GOODS", shelfLifeDays: 180 },
+  { name: "板栗", category: "DRY_GOODS", unit: "g", aliases: ["栗子"], shoppingArea: "DRY_GOODS", shelfLifeDays: 30 },
+  { name: "笋干", category: "DRY_GOODS", unit: "g", aliases: [], shoppingArea: "DRY_GOODS", shelfLifeDays: 365 },
+  { name: "蒸肉米粉", category: "DRY_GOODS", unit: "g", aliases: ["蒸肉粉"], shoppingArea: "DRY_GOODS", shelfLifeDays: 365 },
+  { name: "榛蘑", category: "DRY_GOODS", unit: "g", aliases: [], shoppingArea: "DRY_GOODS", shelfLifeDays: 365 },
+  { name: "粉条", category: "DRY_GOODS", unit: "g", aliases: ["宽粉"], shoppingArea: "DRY_GOODS", shelfLifeDays: 365 },
+  { name: "干贝", category: "DRY_GOODS", unit: "g", aliases: ["瑶柱"], shoppingArea: "DRY_GOODS", shelfLifeDays: 365 },
+
+  // —— 扩充：调料 ——
+  { name: "椰浆", category: "SEASONING", unit: "ml", aliases: ["椰奶"], shoppingArea: "DRY_GOODS", shelfLifeDays: 180 },
+  { name: "香茅", category: "SEASONING", unit: "根", aliases: [], shoppingArea: "VEGETABLE", shelfLifeDays: 7 },
+  { name: "火锅底料", category: "SEASONING", unit: "g", aliases: [], shoppingArea: "DRY_GOODS", shelfLifeDays: 180 },
+  { name: "白胡椒粉", category: "SEASONING", unit: "g", aliases: [], shoppingArea: "DRY_GOODS", shelfLifeDays: 365 },
+  { name: "蒜蓉辣酱", category: "SEASONING", unit: "g", aliases: [], shoppingArea: "DRY_GOODS", shelfLifeDays: 180 },
+  { name: "豆豉鲮鱼", category: "SEASONING", unit: "罐", aliases: [], shoppingArea: "DRY_GOODS", shelfLifeDays: 365 },
+
+  // —— 扩充：其他/加工 ——
+  { name: "啤酒", category: "OTHER", unit: "ml", aliases: [], shoppingArea: "OTHER", shelfLifeDays: 180 },
+  { name: "可乐", category: "OTHER", unit: "ml", aliases: [], shoppingArea: "OTHER", shelfLifeDays: 180 },
+  { name: "雪菜", category: "OTHER", unit: "g", aliases: ["雪里蕻"], shoppingArea: "DRY_GOODS", shelfLifeDays: 30 },
+  { name: "辣白菜", category: "OTHER", unit: "g", aliases: ["韩式泡菜"], shoppingArea: "DRY_GOODS", shelfLifeDays: 30 },
+  { name: "酸萝卜", category: "OTHER", unit: "g", aliases: [], shoppingArea: "DRY_GOODS", shelfLifeDays: 30 },
+  { name: "茶叶", category: "OTHER", unit: "g", aliases: ["红茶"], shoppingArea: "DRY_GOODS", shelfLifeDays: 365 },
+  { name: "大葱", category: "VEGETABLE", unit: "根", aliases: [], shoppingArea: "VEGETABLE", shelfLifeDays: 14 },
+  { name: "红椒", category: "VEGETABLE", unit: "个", aliases: ["红甜椒"], shoppingArea: "VEGETABLE", shelfLifeDays: 7 },
+  { name: "紫苏", category: "VEGETABLE", unit: "g", aliases: [], shoppingArea: "VEGETABLE", shelfLifeDays: 5 },
+  { name: "芋头", category: "VEGETABLE", unit: "个", aliases: ["芋艿"], shoppingArea: "VEGETABLE", shelfLifeDays: 20 },
+  { name: "苦菊", category: "VEGETABLE", unit: "g", aliases: [], shoppingArea: "VEGETABLE", shelfLifeDays: 4 },
+  { name: "青柠", category: "FRUIT", unit: "个", aliases: ["青柠檬"], shoppingArea: "VEGETABLE", shelfLifeDays: 14 },
+  { name: "黑芝麻", category: "SEASONING", unit: "g", aliases: [], shoppingArea: "DRY_GOODS", shelfLifeDays: 365 },
+  { name: "老干妈", category: "SEASONING", unit: "g", aliases: ["风味豆豉"], shoppingArea: "DRY_GOODS", shelfLifeDays: 365 },
+  { name: "沙拉酱", category: "SEASONING", unit: "g", aliases: ["千岛酱"], shoppingArea: "DRY_GOODS", shelfLifeDays: 120 },
+  { name: "鱼丸", category: "SEAFOOD", unit: "g", aliases: [], shoppingArea: "FROZEN", shelfLifeDays: 60 },
+  { name: "虾滑", category: "SEAFOOD", unit: "g", aliases: [], shoppingArea: "FROZEN", shelfLifeDays: 60 },
+  { name: "蟹棒", category: "SEAFOOD", unit: "根", aliases: ["蟹柳"], shoppingArea: "FROZEN", shelfLifeDays: 90 },
+  { name: "鱼豆腐", category: "SOY", unit: "g", aliases: [], shoppingArea: "FROZEN", shelfLifeDays: 60 },
 ];
 
 // ============================================================
@@ -2629,6 +2739,293 @@ const DISHES: DishSeed[] = [
 ];
 
 // ============================================================
+// 菜品骨架库（只有元数据，无完整菜谱）。
+// 用于大幅扩充「点菜/推荐」可选范围；首次进入确认菜单时由 AI 按需补全菜谱
+// （见 lib/planning/ensure-recipes.ts），补全后即与内置菜一样使用。
+// ============================================================
+type DishSkeleton = {
+  name: string;
+  cuisine: string;
+  difficulty: number;
+  totalMinutes: number;
+  tags: string[];
+  isSpicy?: boolean;
+  isChildFriendly?: boolean;
+  isLight?: boolean;
+  isHearty?: boolean;
+  isSoup?: boolean;
+  isStaple?: boolean;
+  isVegetarian?: boolean;
+  requiredCookware: string[];
+  mainIngredients: string[];
+};
+
+const W = ["炒锅"];
+const DISH_SKELETONS: DishSkeleton[] = [
+  // —— 家常素菜 ——
+  { name: "蒜蓉西兰花", cuisine: "家常菜", difficulty: 1, totalMinutes: 12, tags: ["素菜", "清淡", "快手"], isVegetarian: true, isLight: true, isChildFriendly: true, requiredCookware: W, mainIngredients: ["西兰花", "大蒜"] },
+  { name: "白灼芥兰", cuisine: "粤菜", difficulty: 1, totalMinutes: 12, tags: ["素菜", "清淡"], isVegetarian: true, isLight: true, requiredCookware: ["汤锅"], mainIngredients: ["芥兰"] },
+  { name: "清炒油麦菜", cuisine: "家常菜", difficulty: 1, totalMinutes: 8, tags: ["素菜", "清淡", "快手"], isVegetarian: true, isLight: true, requiredCookware: W, mainIngredients: ["油麦菜", "大蒜"] },
+  { name: "上汤菠菜", cuisine: "粤菜", difficulty: 2, totalMinutes: 15, tags: ["素菜", "清淡"], isVegetarian: true, isLight: true, requiredCookware: ["汤锅"], mainIngredients: ["菠菜", "皮蛋", "咸鸭蛋"] },
+  { name: "清炒荷兰豆", cuisine: "家常菜", difficulty: 1, totalMinutes: 10, tags: ["素菜", "快手", "清淡"], isVegetarian: true, isLight: true, requiredCookware: W, mainIngredients: ["荷兰豆", "大蒜"] },
+  { name: "油焖茭白", cuisine: "浙菜", difficulty: 2, totalMinutes: 15, tags: ["素菜", "下饭"], isVegetarian: true, requiredCookware: W, mainIngredients: ["茭白"] },
+  { name: "凉拌苦瓜", cuisine: "家常菜", difficulty: 1, totalMinutes: 10, tags: ["凉菜", "清淡", "解腻"], isVegetarian: true, isLight: true, requiredCookware: ["汤锅"], mainIngredients: ["苦瓜", "大蒜"] },
+  { name: "蒜蓉丝瓜", cuisine: "家常菜", difficulty: 1, totalMinutes: 12, tags: ["素菜", "清淡", "快手"], isVegetarian: true, isLight: true, requiredCookware: W, mainIngredients: ["丝瓜", "大蒜"] },
+  { name: "家常豆腐", cuisine: "家常菜", difficulty: 2, totalMinutes: 20, tags: ["下饭", "豆制品"], isChildFriendly: true, requiredCookware: W, mainIngredients: ["豆腐", "青椒", "五花肉"] },
+  { name: "红烧豆腐", cuisine: "家常菜", difficulty: 2, totalMinutes: 20, tags: ["下饭", "豆制品"], isVegetarian: true, requiredCookware: W, mainIngredients: ["豆腐"] },
+  { name: "香煎豆腐", cuisine: "家常菜", difficulty: 2, totalMinutes: 15, tags: ["下饭", "豆制品", "快手"], isVegetarian: true, requiredCookware: ["平底锅"], mainIngredients: ["豆腐"] },
+  { name: "清炒西葫芦", cuisine: "家常菜", difficulty: 1, totalMinutes: 10, tags: ["素菜", "快手", "清淡"], isVegetarian: true, isLight: true, requiredCookware: W, mainIngredients: ["西葫芦", "大蒜"] },
+  { name: "番茄炒花菜", cuisine: "家常菜", difficulty: 2, totalMinutes: 15, tags: ["素菜", "下饭"], isVegetarian: true, isChildFriendly: true, requiredCookware: W, mainIngredients: ["菜花", "番茄"] },
+  { name: "干锅包菜", cuisine: "湘菜", difficulty: 2, totalMinutes: 15, tags: ["下饭", "微辣"], isSpicy: true, requiredCookware: W, mainIngredients: ["圆白菜", "五花肉", "干辣椒"] },
+  { name: "蚝油生菜心", cuisine: "粤菜", difficulty: 1, totalMinutes: 10, tags: ["素菜", "清淡", "快手"], isVegetarian: true, isLight: true, requiredCookware: ["汤锅"], mainIngredients: ["生菜", "蚝油"] },
+  { name: "雪菜炒毛豆", cuisine: "浙菜", difficulty: 2, totalMinutes: 15, tags: ["下饭", "素菜"], isVegetarian: true, requiredCookware: W, mainIngredients: ["雪菜", "毛豆"] },
+  { name: "腐竹炒木耳", cuisine: "家常菜", difficulty: 2, totalMinutes: 18, tags: ["素菜", "下饭"], isVegetarian: true, requiredCookware: W, mainIngredients: ["腐竹", "木耳"] },
+  { name: "醋溜大白菜", cuisine: "东北菜", difficulty: 2, totalMinutes: 15, tags: ["下饭", "酸甜"], isVegetarian: true, requiredCookware: W, mainIngredients: ["白菜", "干辣椒"] },
+  { name: "清炒山药", cuisine: "家常菜", difficulty: 2, totalMinutes: 15, tags: ["素菜", "清淡"], isVegetarian: true, isLight: true, requiredCookware: W, mainIngredients: ["山药", "木耳"] },
+  { name: "蒜蓉粉丝蒸娃娃菜", cuisine: "粤菜", difficulty: 2, totalMinutes: 20, tags: ["清淡", "蒸"], isVegetarian: true, isLight: true, requiredCookware: ["蒸锅"], mainIngredients: ["娃娃菜", "粉丝", "大蒜"] },
+  { name: "茄子焖豆角", cuisine: "东北菜", difficulty: 2, totalMinutes: 20, tags: ["下饭", "素菜"], isVegetarian: true, requiredCookware: W, mainIngredients: ["茄子", "豆角"] },
+  { name: "虎皮青椒", cuisine: "家常菜", difficulty: 2, totalMinutes: 15, tags: ["下饭", "微辣"], isSpicy: true, isVegetarian: true, requiredCookware: ["平底锅"], mainIngredients: ["青椒"] },
+  { name: "麻辣香锅", cuisine: "川菜", difficulty: 3, totalMinutes: 30, tags: ["下饭", "麻辣", "聚餐"], isSpicy: true, isHearty: true, requiredCookware: W, mainIngredients: ["藕片", "午餐肉", "虾", "西兰花"] },
+  { name: "干煸四季豆", cuisine: "川菜", difficulty: 2, totalMinutes: 18, tags: ["下饭", "微辣"], isSpicy: true, requiredCookware: W, mainIngredients: ["豆角", "肉末", "干辣椒"] },
+  { name: "鱼香茄子", cuisine: "川菜", difficulty: 2, totalMinutes: 20, tags: ["下饭", "鱼香"], isSpicy: true, requiredCookware: W, mainIngredients: ["茄子", "肉末"] },
+  { name: "炒合菜", cuisine: "东北菜", difficulty: 2, totalMinutes: 15, tags: ["下饭", "素菜"], isVegetarian: true, requiredCookware: W, mainIngredients: ["豆芽", "韭菜", "粉丝", "鸡蛋"] },
+  { name: "炝炒圆白菜", cuisine: "家常菜", difficulty: 1, totalMinutes: 10, tags: ["素菜", "快手", "下饭"], isVegetarian: true, requiredCookware: W, mainIngredients: ["圆白菜", "干辣椒"] },
+  { name: "凉拌木耳", cuisine: "家常菜", difficulty: 1, totalMinutes: 15, tags: ["凉菜", "清淡", "解腻"], isVegetarian: true, isLight: true, requiredCookware: ["汤锅"], mainIngredients: ["木耳", "小米椒", "香菜"] },
+  { name: "凉拌豆腐皮", cuisine: "家常菜", difficulty: 1, totalMinutes: 10, tags: ["凉菜", "快手", "豆制品"], isVegetarian: true, requiredCookware: [], mainIngredients: ["豆皮", "黄瓜", "胡萝卜"] },
+  { name: "凉拌菠菜", cuisine: "家常菜", difficulty: 1, totalMinutes: 12, tags: ["凉菜", "清淡"], isVegetarian: true, isLight: true, requiredCookware: ["汤锅"], mainIngredients: ["菠菜", "大蒜"] },
+  { name: "炒三丝", cuisine: "家常菜", difficulty: 2, totalMinutes: 15, tags: ["素菜", "下饭"], isVegetarian: true, requiredCookware: W, mainIngredients: ["土豆", "青椒", "胡萝卜"] },
+  { name: "西芹炒百合", cuisine: "粤菜", difficulty: 2, totalMinutes: 15, tags: ["清淡", "素菜"], isVegetarian: true, isLight: true, requiredCookware: W, mainIngredients: ["芹菜", "百合", "胡萝卜"] },
+  { name: "蒜香空心菜梗", cuisine: "家常菜", difficulty: 1, totalMinutes: 10, tags: ["素菜", "快手"], isVegetarian: true, requiredCookware: W, mainIngredients: ["空心菜", "大蒜"] },
+
+  // —— 蛋类/豆制品 ——
+  { name: "韭菜盒子", cuisine: "北方面食", difficulty: 3, totalMinutes: 40, tags: ["主食", "煎"], isStaple: true, requiredCookware: ["平底锅"], mainIngredients: ["面粉", "韭菜", "鸡蛋"] },
+  { name: "洋葱炒蛋", cuisine: "家常菜", difficulty: 1, totalMinutes: 10, tags: ["快手", "下饭"], isChildFriendly: true, requiredCookware: W, mainIngredients: ["洋葱", "鸡蛋"] },
+  { name: "木耳炒鸡蛋", cuisine: "家常菜", difficulty: 1, totalMinutes: 12, tags: ["快手", "下饭"], isChildFriendly: true, requiredCookware: W, mainIngredients: ["木耳", "鸡蛋"] },
+  { name: "苦瓜炒蛋", cuisine: "粤菜", difficulty: 2, totalMinutes: 12, tags: ["快手", "清淡"], isLight: true, requiredCookware: W, mainIngredients: ["苦瓜", "鸡蛋"] },
+  { name: "尖椒炒蛋", cuisine: "家常菜", difficulty: 1, totalMinutes: 10, tags: ["快手", "下饭", "微辣"], isSpicy: true, requiredCookware: W, mainIngredients: ["尖椒", "鸡蛋"] },
+  { name: "黄瓜炒蛋", cuisine: "家常菜", difficulty: 1, totalMinutes: 10, tags: ["快手", "清淡"], isChildFriendly: true, isLight: true, requiredCookware: W, mainIngredients: ["黄瓜", "鸡蛋"] },
+  { name: "蒸水蛋虾仁", cuisine: "粤菜", difficulty: 2, totalMinutes: 18, tags: ["蒸", "清淡", "儿童"], isChildFriendly: true, isLight: true, requiredCookware: ["蒸锅"], mainIngredients: ["鸡蛋", "虾仁"] },
+  { name: "咸蛋黄豆腐", cuisine: "家常菜", difficulty: 2, totalMinutes: 18, tags: ["下饭", "豆制品"], requiredCookware: W, mainIngredients: ["豆腐", "咸鸭蛋"] },
+  { name: "麻婆豆腐盖饭", cuisine: "川菜", difficulty: 2, totalMinutes: 20, tags: ["主食", "下饭", "麻辣"], isSpicy: true, isStaple: true, requiredCookware: W, mainIngredients: ["豆腐", "肉末", "大米"] },
+  { name: "铁板豆腐", cuisine: "家常菜", difficulty: 2, totalMinutes: 18, tags: ["下饭", "豆制品"], requiredCookware: ["平底锅"], mainIngredients: ["豆腐", "洋葱", "青椒"] },
+  { name: "毛血旺", cuisine: "川菜", difficulty: 3, totalMinutes: 35, tags: ["下饭", "麻辣", "聚餐"], isSpicy: true, isHearty: true, requiredCookware: W, mainIngredients: ["鸭血", "毛肚", "黄豆芽", "午餐肉"] },
+
+  // —— 猪肉 ——
+  { name: "青椒肉丝", cuisine: "家常菜", difficulty: 2, totalMinutes: 15, tags: ["下饭", "快手"], requiredCookware: W, mainIngredients: ["猪肉", "青椒"] },
+  { name: "洋葱炒肉", cuisine: "家常菜", difficulty: 2, totalMinutes: 15, tags: ["下饭", "快手"], requiredCookware: W, mainIngredients: ["猪肉", "洋葱"] },
+  { name: "蒜薹炒肉", cuisine: "家常菜", difficulty: 2, totalMinutes: 15, tags: ["下饭", "快手"], requiredCookware: W, mainIngredients: ["蒜薹", "猪肉"] },
+  { name: "芹菜炒肉", cuisine: "家常菜", difficulty: 2, totalMinutes: 15, tags: ["下饭", "快手"], requiredCookware: W, mainIngredients: ["芹菜", "猪肉"] },
+  { name: "茭白炒肉丝", cuisine: "浙菜", difficulty: 2, totalMinutes: 15, tags: ["下饭"], requiredCookware: W, mainIngredients: ["茭白", "猪肉"] },
+  { name: "莴笋炒肉片", cuisine: "家常菜", difficulty: 2, totalMinutes: 15, tags: ["下饭", "清淡"], requiredCookware: W, mainIngredients: ["莴笋", "猪肉"] },
+  { name: "蒜苗回锅肉", cuisine: "川菜", difficulty: 3, totalMinutes: 25, tags: ["下饭", "微辣"], isSpicy: true, isHearty: true, requiredCookware: W, mainIngredients: ["五花肉", "蒜薹"] },
+  { name: "梅菜扣肉", cuisine: "粤菜", difficulty: 4, totalMinutes: 90, tags: ["宴客", "下饭", "蒸"], isHearty: true, requiredCookware: ["蒸锅"], mainIngredients: ["五花肉", "梅干菜"] },
+  { name: "粉蒸肉", cuisine: "湘菜", difficulty: 3, totalMinutes: 70, tags: ["蒸", "下饭", "宴客"], isHearty: true, requiredCookware: ["蒸锅"], mainIngredients: ["五花肉", "蒸肉米粉"] },
+  { name: "东坡肉", cuisine: "浙菜", difficulty: 4, totalMinutes: 100, tags: ["宴客", "下饭", "炖"], isHearty: true, requiredCookware: ["砂锅"], mainIngredients: ["五花肉"] },
+  { name: "糖醋里脊", cuisine: "鲁菜", difficulty: 3, totalMinutes: 30, tags: ["酸甜", "儿童", "宴客"], isChildFriendly: true, requiredCookware: W, mainIngredients: ["里脊肉"] },
+  { name: "咕噜肉", cuisine: "粤菜", difficulty: 3, totalMinutes: 30, tags: ["酸甜", "儿童"], isChildFriendly: true, requiredCookware: W, mainIngredients: ["里脊肉", "青椒", "菠萝"] },
+  { name: "蚂蚁上树", cuisine: "川菜", difficulty: 2, totalMinutes: 20, tags: ["下饭", "微辣"], isSpicy: true, requiredCookware: W, mainIngredients: ["粉丝", "肉末"] },
+  { name: "肉末粉丝", cuisine: "家常菜", difficulty: 2, totalMinutes: 18, tags: ["下饭", "快手"], requiredCookware: W, mainIngredients: ["粉丝", "肉末"] },
+  { name: "红烧蹄髈", cuisine: "苏菜", difficulty: 4, totalMinutes: 120, tags: ["宴客", "下饭", "炖"], isHearty: true, requiredCookware: ["砂锅"], mainIngredients: ["猪蹄"] },
+  { name: "红烧猪蹄", cuisine: "家常菜", difficulty: 3, totalMinutes: 80, tags: ["下饭", "炖", "宴客"], isHearty: true, requiredCookware: ["炖锅"], mainIngredients: ["猪蹄"] },
+  { name: "黄豆焖猪蹄", cuisine: "家常菜", difficulty: 3, totalMinutes: 90, tags: ["炖", "下饭"], isHearty: true, requiredCookware: ["炖锅"], mainIngredients: ["猪蹄", "黄豆"] },
+  { name: "笋干红烧肉", cuisine: "浙菜", difficulty: 3, totalMinutes: 70, tags: ["下饭", "炖"], isHearty: true, requiredCookware: ["炖锅"], mainIngredients: ["五花肉", "笋干"] },
+  { name: "土豆烧排骨", cuisine: "家常菜", difficulty: 3, totalMinutes: 50, tags: ["下饭", "炖"], isHearty: true, isChildFriendly: true, requiredCookware: ["炖锅"], mainIngredients: ["排骨", "土豆"] },
+  { name: "糖醋排骨", cuisine: "苏菜", difficulty: 3, totalMinutes: 45, tags: ["酸甜", "下饭", "宴客"], isChildFriendly: true, requiredCookware: W, mainIngredients: ["排骨"] },
+  { name: "豆角焖排骨", cuisine: "家常菜", difficulty: 3, totalMinutes: 45, tags: ["下饭", "炖"], isHearty: true, requiredCookware: ["炖锅"], mainIngredients: ["排骨", "豆角"] },
+  { name: "蒜香排骨", cuisine: "粤菜", difficulty: 3, totalMinutes: 35, tags: ["下饭", "宴客"], requiredCookware: ["烤箱"], mainIngredients: ["排骨", "大蒜"] },
+  { name: "椒盐排骨", cuisine: "粤菜", difficulty: 3, totalMinutes: 35, tags: ["下饭", "椒盐"], requiredCookware: W, mainIngredients: ["排骨"] },
+  { name: "无锡酱排骨", cuisine: "苏菜", difficulty: 3, totalMinutes: 60, tags: ["下饭", "炖", "宴客"], isHearty: true, requiredCookware: ["炖锅"], mainIngredients: ["排骨"] },
+  { name: "莲藕炖排骨", cuisine: "湘菜", difficulty: 3, totalMinutes: 70, tags: ["汤", "清淡"], isSoup: true, isLight: true, requiredCookware: ["炖锅"], mainIngredients: ["排骨", "莲藕"] },
+  { name: "玉米排骨汤", cuisine: "家常菜", difficulty: 2, totalMinutes: 60, tags: ["汤", "清淡", "儿童"], isSoup: true, isLight: true, isChildFriendly: true, requiredCookware: ["炖锅"], mainIngredients: ["排骨", "玉米", "胡萝卜"] },
+  { name: "咸肉冬瓜汤", cuisine: "苏菜", difficulty: 2, totalMinutes: 40, tags: ["汤", "清淡"], isSoup: true, isLight: true, requiredCookware: ["汤锅"], mainIngredients: ["咸肉", "冬瓜"] },
+
+  // —— 鸡鸭禽 ——
+  { name: "黄焖鸡", cuisine: "鲁菜", difficulty: 3, totalMinutes: 40, tags: ["下饭", "炖", "宴客"], isHearty: true, requiredCookware: ["炖锅"], mainIngredients: ["鸡腿", "香菇", "青椒"] },
+  { name: "三杯鸡", cuisine: "闽菜", difficulty: 3, totalMinutes: 35, tags: ["下饭", "宴客"], isHearty: true, requiredCookware: ["砂锅"], mainIngredients: ["鸡腿", "罗勒", "生姜"] },
+  { name: "辣子鸡", cuisine: "川菜", difficulty: 3, totalMinutes: 35, tags: ["下饭", "麻辣", "宴客"], isSpicy: true, requiredCookware: W, mainIngredients: ["鸡腿", "干辣椒", "花椒"] },
+  { name: "大盘鸡", cuisine: "西北菜", difficulty: 3, totalMinutes: 50, tags: ["下饭", "聚餐", "微辣"], isSpicy: true, isHearty: true, requiredCookware: ["炒锅"], mainIngredients: ["整鸡", "土豆", "青椒", "皮带面"] },
+  { name: "宫保鸡丁盖饭", cuisine: "川菜", difficulty: 2, totalMinutes: 20, tags: ["主食", "下饭"], isStaple: true, isSpicy: true, requiredCookware: W, mainIngredients: ["鸡胸肉", "花生", "大米"] },
+  { name: "香菇滑鸡", cuisine: "粤菜", difficulty: 2, totalMinutes: 25, tags: ["蒸", "清淡"], isLight: true, requiredCookware: ["蒸锅"], mainIngredients: ["鸡腿", "香菇"] },
+  { name: "口水鸡", cuisine: "川菜", difficulty: 3, totalMinutes: 40, tags: ["凉菜", "麻辣", "宴客"], isSpicy: true, requiredCookware: ["汤锅"], mainIngredients: ["整鸡", "花生", "小米椒"] },
+  { name: "手撕鸡", cuisine: "粤菜", difficulty: 2, totalMinutes: 40, tags: ["凉菜", "清淡"], isLight: true, requiredCookware: ["汤锅"], mainIngredients: ["整鸡", "小葱"] },
+  { name: "栗子烧鸡", cuisine: "家常菜", difficulty: 3, totalMinutes: 45, tags: ["下饭", "炖", "宴客"], isHearty: true, requiredCookware: ["炖锅"], mainIngredients: ["鸡腿", "板栗"] },
+  { name: "可乐鸡腿", cuisine: "家常菜", difficulty: 2, totalMinutes: 30, tags: ["下饭", "儿童", "甜"], isChildFriendly: true, requiredCookware: W, mainIngredients: ["鸡腿"] },
+  { name: "新奥尔良烤鸡翅", cuisine: "西餐", difficulty: 2, totalMinutes: 40, tags: ["儿童", "烤"], isChildFriendly: true, requiredCookware: ["烤箱"], mainIngredients: ["鸡翅"] },
+  { name: "蜜汁鸡翅", cuisine: "家常菜", difficulty: 2, totalMinutes: 30, tags: ["下饭", "儿童", "甜"], isChildFriendly: true, requiredCookware: W, mainIngredients: ["鸡翅", "蜂蜜"] },
+  { name: "啤酒鸭", cuisine: "湘菜", difficulty: 3, totalMinutes: 60, tags: ["下饭", "炖", "宴客"], isHearty: true, requiredCookware: ["炖锅"], mainIngredients: ["鸭肉", "啤酒", "青椒"] },
+  { name: "酸萝卜老鸭汤", cuisine: "川菜", difficulty: 3, totalMinutes: 90, tags: ["汤", "清淡"], isSoup: true, isLight: true, requiredCookware: ["炖锅"], mainIngredients: ["鸭肉", "酸萝卜"] },
+  { name: "盐水鸭", cuisine: "苏菜", difficulty: 3, totalMinutes: 60, tags: ["凉菜", "宴客"], requiredCookware: ["汤锅"], mainIngredients: ["鸭肉"] },
+  { name: "小鸡炖蘑菇", cuisine: "东北菜", difficulty: 3, totalMinutes: 60, tags: ["炖", "下饭", "宴客"], isHearty: true, requiredCookware: ["炖锅"], mainIngredients: ["整鸡", "榛蘑", "粉条"] },
+  { name: "板栗鸡翅", cuisine: "家常菜", difficulty: 2, totalMinutes: 35, tags: ["下饭"], requiredCookware: W, mainIngredients: ["鸡翅", "板栗"] },
+
+  // —— 牛羊 ——
+  { name: "番茄炖牛腩", cuisine: "家常菜", difficulty: 3, totalMinutes: 90, tags: ["炖", "下饭", "儿童"], isHearty: true, isChildFriendly: true, requiredCookware: ["炖锅"], mainIngredients: ["牛腩", "番茄", "土豆"] },
+  { name: "土豆炖牛肉", cuisine: "东北菜", difficulty: 3, totalMinutes: 80, tags: ["炖", "下饭"], isHearty: true, requiredCookware: ["炖锅"], mainIngredients: ["牛肉", "土豆", "胡萝卜"] },
+  { name: "萝卜炖牛腩", cuisine: "粤菜", difficulty: 3, totalMinutes: 90, tags: ["炖", "清淡"], isHearty: true, requiredCookware: ["炖锅"], mainIngredients: ["牛腩", "白萝卜"] },
+  { name: "黑椒牛柳", cuisine: "西餐", difficulty: 2, totalMinutes: 20, tags: ["下饭", "快手"], requiredCookware: ["平底锅"], mainIngredients: ["牛肉", "洋葱", "黑胡椒粉"] },
+  { name: "西兰花炒牛肉", cuisine: "粤菜", difficulty: 2, totalMinutes: 18, tags: ["下饭", "快手"], requiredCookware: W, mainIngredients: ["牛肉", "西兰花"] },
+  { name: "杭椒牛柳", cuisine: "粤菜", difficulty: 2, totalMinutes: 18, tags: ["下饭", "微辣"], isSpicy: true, requiredCookware: W, mainIngredients: ["牛肉", "杭椒"] },
+  { name: "水煮牛肉", cuisine: "川菜", difficulty: 3, totalMinutes: 35, tags: ["下饭", "麻辣", "宴客"], isSpicy: true, isHearty: true, requiredCookware: W, mainIngredients: ["牛肉", "豆芽", "生菜", "干辣椒"] },
+  { name: "孜然牛肉", cuisine: "西北菜", difficulty: 2, totalMinutes: 20, tags: ["下饭", "微辣"], isSpicy: true, requiredCookware: W, mainIngredients: ["牛肉", "洋葱", "孜然"] },
+  { name: "牛肉焖饭", cuisine: "家常菜", difficulty: 3, totalMinutes: 45, tags: ["主食", "下饭"], isStaple: true, isHearty: true, requiredCookware: ["电饭锅"], mainIngredients: ["牛肉", "胡萝卜", "土豆", "大米"] },
+  { name: "清炖羊肉", cuisine: "西北菜", difficulty: 3, totalMinutes: 100, tags: ["汤", "炖", "滋补"], isSoup: true, requiredCookware: ["炖锅"], mainIngredients: ["羊肉", "白萝卜", "生姜"] },
+  { name: "红焖羊肉", cuisine: "西北菜", difficulty: 3, totalMinutes: 90, tags: ["炖", "下饭", "宴客"], isHearty: true, requiredCookware: ["炖锅"], mainIngredients: ["羊肉", "胡萝卜"] },
+  { name: "羊肉串", cuisine: "西北菜", difficulty: 2, totalMinutes: 30, tags: ["烤", "聚餐", "微辣"], isSpicy: true, requiredCookware: ["烤箱"], mainIngredients: ["羊肉", "孜然"] },
+  { name: "羊蝎子火锅", cuisine: "西北菜", difficulty: 4, totalMinutes: 120, tags: ["炖", "聚餐", "宴客"], isHearty: true, requiredCookware: ["炖锅"], mainIngredients: ["羊蝎子"] },
+
+  // —— 水产 ——
+  { name: "红烧带鱼", cuisine: "家常菜", difficulty: 3, totalMinutes: 30, tags: ["下饭", "宴客"], requiredCookware: ["平底锅"], mainIngredients: ["带鱼"] },
+  { name: "糖醋鲤鱼", cuisine: "鲁菜", difficulty: 4, totalMinutes: 35, tags: ["酸甜", "宴客"], requiredCookware: W, mainIngredients: ["鲤鱼"] },
+  { name: "红烧鲫鱼", cuisine: "家常菜", difficulty: 3, totalMinutes: 30, tags: ["下饭"], requiredCookware: ["平底锅"], mainIngredients: ["鲫鱼"] },
+  { name: "清蒸多宝鱼", cuisine: "粤菜", difficulty: 2, totalMinutes: 20, tags: ["蒸", "清淡", "宴客"], isLight: true, requiredCookware: ["蒸锅"], mainIngredients: ["多宝鱼", "生姜"] },
+  { name: "水煮鱼", cuisine: "川菜", difficulty: 3, totalMinutes: 35, tags: ["下饭", "麻辣", "宴客"], isSpicy: true, isHearty: true, requiredCookware: W, mainIngredients: ["草鱼", "豆芽", "干辣椒"] },
+  { name: "番茄鱼", cuisine: "家常菜", difficulty: 3, totalMinutes: 30, tags: ["下饭", "酸甜"], isChildFriendly: true, requiredCookware: W, mainIngredients: ["黑鱼", "番茄"] },
+  { name: "干烧黄鱼", cuisine: "苏菜", difficulty: 3, totalMinutes: 30, tags: ["下饭", "宴客"], requiredCookware: ["平底锅"], mainIngredients: ["黄鱼"] },
+  { name: "鲫鱼豆腐汤", cuisine: "家常菜", difficulty: 2, totalMinutes: 30, tags: ["汤", "清淡", "滋补"], isSoup: true, isLight: true, requiredCookware: ["汤锅"], mainIngredients: ["鲫鱼", "豆腐"] },
+  { name: "蒜蓉粉丝蒸虾", cuisine: "粤菜", difficulty: 3, totalMinutes: 20, tags: ["蒸", "宴客"], requiredCookware: ["蒸锅"], mainIngredients: ["大虾", "粉丝", "大蒜"] },
+  { name: "油焖大虾", cuisine: "鲁菜", difficulty: 2, totalMinutes: 20, tags: ["下饭", "宴客"], requiredCookware: W, mainIngredients: ["大虾"] },
+  { name: "椒盐虾", cuisine: "粤菜", difficulty: 2, totalMinutes: 18, tags: ["下饭", "椒盐"], requiredCookware: W, mainIngredients: ["大虾"] },
+  { name: "白灼虾", cuisine: "粤菜", difficulty: 1, totalMinutes: 12, tags: ["清淡", "快手", "宴客"], isLight: true, requiredCookware: ["汤锅"], mainIngredients: ["大虾", "生姜"] },
+  { name: "虾仁滑蛋", cuisine: "粤菜", difficulty: 2, totalMinutes: 12, tags: ["快手", "清淡", "儿童"], isChildFriendly: true, isLight: true, requiredCookware: W, mainIngredients: ["虾仁", "鸡蛋"] },
+  { name: "西兰花炒虾仁", cuisine: "家常菜", difficulty: 2, totalMinutes: 15, tags: ["清淡", "快手"], isLight: true, isChildFriendly: true, requiredCookware: W, mainIngredients: ["虾仁", "西兰花"] },
+  { name: "蒜蓉生蚝", cuisine: "粤菜", difficulty: 3, totalMinutes: 20, tags: ["烤", "宴客"], requiredCookware: ["烤箱"], mainIngredients: ["生蚝", "大蒜", "粉丝"] },
+  { name: "辣炒花蛤", cuisine: "家常菜", difficulty: 2, totalMinutes: 18, tags: ["下饭", "微辣", "快手"], isSpicy: true, requiredCookware: W, mainIngredients: ["花蛤", "小米椒"] },
+  { name: "葱姜炒蟹", cuisine: "苏菜", difficulty: 3, totalMinutes: 25, tags: ["宴客"], requiredCookware: W, mainIngredients: ["螃蟹", "生姜", "小葱"] },
+  { name: "清蒸大闸蟹", cuisine: "苏菜", difficulty: 1, totalMinutes: 20, tags: ["蒸", "宴客", "清淡"], isLight: true, requiredCookware: ["蒸锅"], mainIngredients: ["螃蟹", "生姜"] },
+  { name: "鱿鱼炒韭菜", cuisine: "家常菜", difficulty: 2, totalMinutes: 15, tags: ["下饭", "快手"], requiredCookware: W, mainIngredients: ["鱿鱼", "韭菜"] },
+  { name: "铁板鱿鱼", cuisine: "家常菜", difficulty: 2, totalMinutes: 18, tags: ["下饭", "微辣"], isSpicy: true, requiredCookware: ["平底锅"], mainIngredients: ["鱿鱼", "洋葱", "孜然"] },
+
+  // —— 汤羹 ——
+  { name: "西红柿鸡蛋汤", cuisine: "家常菜", difficulty: 1, totalMinutes: 12, tags: ["汤", "快手", "清淡"], isSoup: true, isLight: true, isChildFriendly: true, requiredCookware: ["汤锅"], mainIngredients: ["番茄", "鸡蛋"] },
+  { name: "冬瓜丸子汤", cuisine: "家常菜", difficulty: 2, totalMinutes: 30, tags: ["汤", "清淡"], isSoup: true, isLight: true, requiredCookware: ["汤锅"], mainIngredients: ["冬瓜", "肉末"] },
+  { name: "丝瓜蛋汤", cuisine: "家常菜", difficulty: 1, totalMinutes: 12, tags: ["汤", "清淡", "快手"], isSoup: true, isLight: true, requiredCookware: ["汤锅"], mainIngredients: ["丝瓜", "鸡蛋"] },
+  { name: "菌菇汤", cuisine: "家常菜", difficulty: 2, totalMinutes: 25, tags: ["汤", "清淡", "素菜"], isSoup: true, isLight: true, isVegetarian: true, requiredCookware: ["汤锅"], mainIngredients: ["口蘑", "金针菇", "香菇"] },
+  { name: "番茄龙骨汤", cuisine: "家常菜", difficulty: 2, totalMinutes: 60, tags: ["汤", "清淡"], isSoup: true, isLight: true, requiredCookware: ["炖锅"], mainIngredients: ["猪骨", "番茄"] },
+  { name: "酸辣汤", cuisine: "川菜", difficulty: 2, totalMinutes: 20, tags: ["汤", "酸辣"], isSoup: true, isSpicy: true, requiredCookware: ["汤锅"], mainIngredients: ["豆腐", "木耳", "鸡蛋", "胡萝卜"] },
+  { name: "玉米胡萝卜筒骨汤", cuisine: "家常菜", difficulty: 2, totalMinutes: 90, tags: ["汤", "清淡", "儿童"], isSoup: true, isLight: true, isChildFriendly: true, requiredCookware: ["炖锅"], mainIngredients: ["猪骨", "玉米", "胡萝卜"] },
+  { name: "山药排骨汤", cuisine: "家常菜", difficulty: 2, totalMinutes: 70, tags: ["汤", "清淡", "滋补"], isSoup: true, isLight: true, requiredCookware: ["炖锅"], mainIngredients: ["排骨", "山药"] },
+  { name: "海带排骨汤", cuisine: "家常菜", difficulty: 2, totalMinutes: 70, tags: ["汤", "清淡"], isSoup: true, isLight: true, requiredCookware: ["炖锅"], mainIngredients: ["排骨", "海带"] },
+  { name: "鸡汤", cuisine: "家常菜", difficulty: 2, totalMinutes: 90, tags: ["汤", "滋补", "清淡"], isSoup: true, isLight: true, requiredCookware: ["炖锅"], mainIngredients: ["整鸡", "生姜", "红枣"] },
+  { name: "豆腐青菜汤", cuisine: "家常菜", difficulty: 1, totalMinutes: 15, tags: ["汤", "清淡", "快手"], isSoup: true, isLight: true, isVegetarian: true, requiredCookware: ["汤锅"], mainIngredients: ["豆腐", "上海青"] },
+  { name: "罗宋汤", cuisine: "西餐", difficulty: 3, totalMinutes: 60, tags: ["汤", "酸甜", "儿童"], isSoup: true, isChildFriendly: true, requiredCookware: ["汤锅"], mainIngredients: ["牛肉", "番茄", "土豆", "胡萝卜", "圆白菜"] },
+  { name: "玉米浓汤", cuisine: "西餐", difficulty: 2, totalMinutes: 25, tags: ["汤", "儿童", "甜"], isSoup: true, isChildFriendly: true, requiredCookware: ["汤锅"], mainIngredients: ["玉米", "牛奶"] },
+  { name: "南瓜浓汤", cuisine: "西餐", difficulty: 2, totalMinutes: 30, tags: ["汤", "儿童", "清淡"], isSoup: true, isChildFriendly: true, requiredCookware: ["汤锅"], mainIngredients: ["南瓜", "淡奶油"] },
+  { name: "皮蛋瘦肉粥", cuisine: "粤菜", difficulty: 2, totalMinutes: 40, tags: ["主食", "粥", "清淡"], isStaple: true, isLight: true, requiredCookware: ["汤锅"], mainIngredients: ["大米", "皮蛋", "猪肉"] },
+  { name: "海鲜粥", cuisine: "粤菜", difficulty: 2, totalMinutes: 40, tags: ["主食", "粥", "清淡"], isStaple: true, isLight: true, requiredCookware: ["汤锅"], mainIngredients: ["大米", "虾", "鱿鱼"] },
+
+  // —— 主食/面点 ——
+  { name: "扬州炒饭", cuisine: "苏菜", difficulty: 2, totalMinutes: 20, tags: ["主食", "下饭"], isStaple: true, isChildFriendly: true, requiredCookware: W, mainIngredients: ["大米", "鸡蛋", "火腿", "虾仁", "豌豆"] },
+  { name: "酱油炒饭", cuisine: "家常菜", difficulty: 1, totalMinutes: 12, tags: ["主食", "快手"], isStaple: true, requiredCookware: W, mainIngredients: ["大米", "鸡蛋", "小葱"] },
+  { name: "扬州炒面", cuisine: "家常菜", difficulty: 2, totalMinutes: 20, tags: ["主食", "下饭"], isStaple: true, requiredCookware: W, mainIngredients: ["面条", "鸡蛋", "圆白菜", "火腿"] },
+  { name: "肉丝炒面", cuisine: "家常菜", difficulty: 2, totalMinutes: 20, tags: ["主食", "下饭"], isStaple: true, requiredCookware: W, mainIngredients: ["面条", "猪肉", "圆白菜"] },
+  { name: "西红柿鸡蛋面", cuisine: "家常菜", difficulty: 1, totalMinutes: 15, tags: ["主食", "快手", "清淡"], isStaple: true, isChildFriendly: true, requiredCookware: ["汤锅"], mainIngredients: ["面条", "番茄", "鸡蛋"] },
+  { name: "炸酱面", cuisine: "北方面食", difficulty: 2, totalMinutes: 25, tags: ["主食", "下饭"], isStaple: true, requiredCookware: W, mainIngredients: ["面条", "肉末", "黄豆酱", "黄瓜"] },
+  { name: "牛肉面", cuisine: "西北菜", difficulty: 3, totalMinutes: 90, tags: ["主食", "汤面"], isStaple: true, requiredCookware: ["炖锅"], mainIngredients: ["面条", "牛肉", "白萝卜"] },
+  { name: "阳春面", cuisine: "苏菜", difficulty: 1, totalMinutes: 12, tags: ["主食", "清淡", "快手"], isStaple: true, isLight: true, requiredCookware: ["汤锅"], mainIngredients: ["面条", "小葱"] },
+  { name: "热干面", cuisine: "湖北菜", difficulty: 2, totalMinutes: 15, tags: ["主食", "下饭"], isStaple: true, requiredCookware: ["汤锅"], mainIngredients: ["碱水面", "芝麻酱"] },
+  { name: "油泼面", cuisine: "西北菜", difficulty: 2, totalMinutes: 20, tags: ["主食", "微辣"], isStaple: true, isSpicy: true, requiredCookware: ["汤锅"], mainIngredients: ["面条", "辣椒面", "蒜"] },
+  { name: "酸辣粉", cuisine: "川菜", difficulty: 2, totalMinutes: 20, tags: ["主食", "酸辣"], isStaple: true, isSpicy: true, requiredCookware: ["汤锅"], mainIngredients: ["红薯粉", "花生", "榨菜"] },
+  { name: "馄饨", cuisine: "家常菜", difficulty: 3, totalMinutes: 40, tags: ["主食", "汤"], isStaple: true, requiredCookware: ["汤锅"], mainIngredients: ["馄饨皮", "肉末", "紫菜"] },
+  { name: "韭菜鸡蛋饺子", cuisine: "北方面食", difficulty: 3, totalMinutes: 50, tags: ["主食", "煮"], isStaple: true, requiredCookware: ["汤锅"], mainIngredients: ["饺子皮", "韭菜", "鸡蛋"] },
+  { name: "猪肉芹菜饺子", cuisine: "北方面食", difficulty: 3, totalMinutes: 50, tags: ["主食", "煮"], isStaple: true, requiredCookware: ["汤锅"], mainIngredients: ["饺子皮", "猪肉", "芹菜"] },
+  { name: "煎饺", cuisine: "家常菜", difficulty: 2, totalMinutes: 20, tags: ["主食", "煎", "快手"], isStaple: true, requiredCookware: ["平底锅"], mainIngredients: ["饺子", "面粉"] },
+  { name: "葱油饼", cuisine: "家常菜", difficulty: 3, totalMinutes: 40, tags: ["主食", "煎"], isStaple: true, requiredCookware: ["平底锅"], mainIngredients: ["面粉", "小葱"] },
+  { name: "鸡蛋灌饼", cuisine: "北方面食", difficulty: 3, totalMinutes: 30, tags: ["主食", "煎", "早餐"], isStaple: true, requiredCookware: ["平底锅"], mainIngredients: ["面粉", "鸡蛋", "生菜"] },
+  { name: "南瓜饼", cuisine: "家常菜", difficulty: 2, totalMinutes: 30, tags: ["主食", "煎", "儿童", "甜"], isStaple: true, isChildFriendly: true, requiredCookware: ["平底锅"], mainIngredients: ["南瓜", "糯米粉"] },
+  { name: "手抓饼", cuisine: "家常菜", difficulty: 2, totalMinutes: 15, tags: ["主食", "煎", "早餐", "快手"], isStaple: true, requiredCookware: ["平底锅"], mainIngredients: ["手抓饼", "鸡蛋"] },
+  { name: "肉夹馍", cuisine: "西北菜", difficulty: 3, totalMinutes: 60, tags: ["主食", "下饭"], isStaple: true, requiredCookware: ["平底锅"], mainIngredients: ["面粉", "五花肉", "青椒"] },
+  { name: "煲仔饭", cuisine: "粤菜", difficulty: 3, totalMinutes: 35, tags: ["主食", "下饭"], isStaple: true, isHearty: true, requiredCookware: ["砂锅"], mainIngredients: ["大米", "腊肠", "青菜"] },
+  { name: "腊味煲仔饭", cuisine: "粤菜", difficulty: 3, totalMinutes: 40, tags: ["主食", "下饭", "宴客"], isStaple: true, isHearty: true, requiredCookware: ["砂锅"], mainIngredients: ["大米", "腊肠", "腊肉", "上海青"] },
+  { name: "卤肉饭", cuisine: "闽菜", difficulty: 3, totalMinutes: 60, tags: ["主食", "下饭"], isStaple: true, isHearty: true, requiredCookware: ["炖锅"], mainIngredients: ["五花肉", "大米", "卤蛋"] },
+  { name: "黄焖鸡米饭", cuisine: "鲁菜", difficulty: 3, totalMinutes: 40, tags: ["主食", "下饭"], isStaple: true, isHearty: true, requiredCookware: ["砂锅"], mainIngredients: ["鸡腿", "香菇", "大米"] },
+  { name: "咖喱牛肉饭", cuisine: "日料", difficulty: 2, totalMinutes: 40, tags: ["主食", "儿童", "下饭"], isStaple: true, isChildFriendly: true, requiredCookware: W, mainIngredients: ["牛肉", "土豆", "胡萝卜", "咖喱块", "大米"] },
+  { name: "白粥", cuisine: "家常菜", difficulty: 1, totalMinutes: 40, tags: ["主食", "粥", "清淡"], isStaple: true, isLight: true, requiredCookware: ["汤锅"], mainIngredients: ["大米"] },
+  { name: "八宝粥", cuisine: "家常菜", difficulty: 2, totalMinutes: 60, tags: ["主食", "粥", "甜", "早餐"], isStaple: true, requiredCookware: ["炖锅"], mainIngredients: ["大米", "红豆", "花生", "红枣", "莲子"] },
+  { name: "馒头", cuisine: "北方面食", difficulty: 3, totalMinutes: 90, tags: ["主食", "蒸"], isStaple: true, requiredCookware: ["蒸锅"], mainIngredients: ["面粉"] },
+  { name: "花卷", cuisine: "北方面食", difficulty: 3, totalMinutes: 90, tags: ["主食", "蒸"], isStaple: true, requiredCookware: ["蒸锅"], mainIngredients: ["面粉", "小葱"] },
+  { name: "包子", cuisine: "北方面食", difficulty: 4, totalMinutes: 120, tags: ["主食", "蒸", "早餐"], isStaple: true, requiredCookware: ["蒸锅"], mainIngredients: ["面粉", "肉末", "白菜"] },
+
+  // —— 凉菜/开胃 ——
+  { name: "拍黄瓜", cuisine: "家常菜", difficulty: 1, totalMinutes: 8, tags: ["凉菜", "快手", "解腻"], isVegetarian: true, isLight: true, requiredCookware: [], mainIngredients: ["黄瓜", "大蒜"] },
+  { name: "凉拌三丝", cuisine: "家常菜", difficulty: 2, totalMinutes: 15, tags: ["凉菜", "清淡"], isVegetarian: true, isLight: true, requiredCookware: ["汤锅"], mainIngredients: ["土豆", "胡萝卜", "青椒"] },
+  { name: "口水鸡丝", cuisine: "川菜", difficulty: 2, totalMinutes: 25, tags: ["凉菜", "麻辣"], isSpicy: true, requiredCookware: ["汤锅"], mainIngredients: ["鸡胸肉", "黄瓜"] },
+  { name: "夫妻肺片", cuisine: "川菜", difficulty: 4, totalMinutes: 60, tags: ["凉菜", "麻辣", "宴客"], isSpicy: true, requiredCookware: ["炖锅"], mainIngredients: ["牛肉", "牛肚", "花生"] },
+  { name: "凉拌海带丝", cuisine: "家常菜", difficulty: 1, totalMinutes: 15, tags: ["凉菜", "清淡", "解腻"], isVegetarian: true, isLight: true, requiredCookware: ["汤锅"], mainIngredients: ["海带", "大蒜"] },
+  { name: "凉拌粉丝", cuisine: "家常菜", difficulty: 2, totalMinutes: 15, tags: ["凉菜", "酸辣"], isSpicy: true, requiredCookware: ["汤锅"], mainIngredients: ["粉丝", "黄瓜", "胡萝卜"] },
+  { name: "蒜泥白肉", cuisine: "川菜", difficulty: 2, totalMinutes: 30, tags: ["凉菜", "微辣", "宴客"], isSpicy: true, requiredCookware: ["汤锅"], mainIngredients: ["五花肉", "黄瓜", "大蒜"] },
+  { name: "凉拌腐竹", cuisine: "家常菜", difficulty: 2, totalMinutes: 20, tags: ["凉菜", "豆制品"], isVegetarian: true, requiredCookware: ["汤锅"], mainIngredients: ["腐竹", "胡萝卜", "木耳"] },
+  { name: "皮蛋拌豆腐", cuisine: "家常菜", difficulty: 1, totalMinutes: 8, tags: ["凉菜", "快手", "清淡"], isLight: true, requiredCookware: [], mainIngredients: ["嫩豆腐", "皮蛋"] },
+  { name: "凉拌莴笋丝", cuisine: "家常菜", difficulty: 1, totalMinutes: 10, tags: ["凉菜", "清淡", "快手"], isVegetarian: true, isLight: true, requiredCookware: [], mainIngredients: ["莴笋", "大蒜"] },
+
+  // —— 早餐/简餐 ——
+  { name: "茶叶蛋", cuisine: "家常菜", difficulty: 1, totalMinutes: 40, tags: ["早餐", "卤"], requiredCookware: ["汤锅"], mainIngredients: ["鸡蛋", "茶叶", "八角"] },
+  { name: "煎蛋", cuisine: "家常菜", difficulty: 1, totalMinutes: 6, tags: ["早餐", "快手", "儿童"], isChildFriendly: true, requiredCookware: ["平底锅"], mainIngredients: ["鸡蛋"] },
+  { name: "西多士", cuisine: "西餐", difficulty: 2, totalMinutes: 12, tags: ["早餐", "煎", "甜", "儿童"], isChildFriendly: true, requiredCookware: ["平底锅"], mainIngredients: ["面包", "鸡蛋", "炼乳"] },
+  { name: "三明治", cuisine: "西餐", difficulty: 1, totalMinutes: 10, tags: ["早餐", "快手", "儿童"], isChildFriendly: true, requiredCookware: ["平底锅"], mainIngredients: ["面包", "鸡蛋", "生菜", "火腿"] },
+  { name: "牛奶燕麦", cuisine: "西餐", difficulty: 1, totalMinutes: 8, tags: ["早餐", "快手", "清淡"], isLight: true, isChildFriendly: true, requiredCookware: ["奶锅"], mainIngredients: ["燕麦", "牛奶"] },
+  { name: "蔬菜沙拉", cuisine: "西餐", difficulty: 1, totalMinutes: 10, tags: ["清淡", "快手", "减脂"], isVegetarian: true, isLight: true, requiredCookware: [], mainIngredients: ["生菜", "番茄", "黄瓜", "玉米"] },
+  { name: "鸡胸肉沙拉", cuisine: "西餐", difficulty: 2, totalMinutes: 20, tags: ["减脂", "高蛋白", "清淡"], isLight: true, requiredCookware: ["平底锅"], mainIngredients: ["鸡胸肉", "生菜", "番茄", "玉米"] },
+
+  // —— 西餐/异国 ——
+  { name: "意式番茄海鲜面", cuisine: "西餐", difficulty: 3, totalMinutes: 30, tags: ["主食", "宴客"], isStaple: true, requiredCookware: W, mainIngredients: ["意大利面", "虾", "番茄", "蛤蜊"] },
+  { name: "奶油培根意面", cuisine: "西餐", difficulty: 2, totalMinutes: 20, tags: ["主食", "儿童"], isStaple: true, isChildFriendly: true, requiredCookware: W, mainIngredients: ["意大利面", "培根", "淡奶油"] },
+  { name: "照烧鸡腿饭", cuisine: "日料", difficulty: 2, totalMinutes: 25, tags: ["主食", "下饭", "儿童"], isStaple: true, isChildFriendly: true, requiredCookware: ["平底锅"], mainIngredients: ["鸡腿", "大米", "西兰花"] },
+  { name: "日式咖喱鸡", cuisine: "日料", difficulty: 2, totalMinutes: 40, tags: ["下饭", "儿童"], isChildFriendly: true, requiredCookware: W, mainIngredients: ["鸡腿", "土豆", "胡萝卜", "咖喱块"] },
+  { name: "韩式辣白菜炒饭", cuisine: "韩餐", difficulty: 2, totalMinutes: 18, tags: ["主食", "下饭", "微辣"], isStaple: true, isSpicy: true, requiredCookware: W, mainIngredients: ["大米", "辣白菜", "午餐肉", "鸡蛋"] },
+  { name: "部队锅", cuisine: "韩餐", difficulty: 3, totalMinutes: 30, tags: ["聚餐", "微辣", "下饭"], isSpicy: true, isHearty: true, requiredCookware: ["汤锅"], mainIngredients: ["辣白菜", "午餐肉", "年糕", "方便面", "香肠"] },
+  { name: "石锅拌饭", cuisine: "韩餐", difficulty: 3, totalMinutes: 30, tags: ["主食", "下饭"], isStaple: true, requiredCookware: ["砂锅"], mainIngredients: ["大米", "牛肉", "菠菜", "豆芽", "胡萝卜", "鸡蛋"] },
+  { name: "泰式冬阴功汤", cuisine: "东南亚", difficulty: 3, totalMinutes: 30, tags: ["汤", "酸辣", "宴客"], isSoup: true, isSpicy: true, requiredCookware: ["汤锅"], mainIngredients: ["虾", "香茅", "口蘑", "椰浆"] },
+  { name: "番茄牛肉汉堡", cuisine: "西餐", difficulty: 3, totalMinutes: 30, tags: ["主食", "儿童"], isStaple: true, isChildFriendly: true, requiredCookware: ["平底锅"], mainIngredients: ["汉堡胚", "牛肉饼", "生菜", "番茄", "芝士"] },
+  { name: "薯条", cuisine: "西餐", difficulty: 2, totalMinutes: 25, tags: ["儿童", "炸", "小吃"], isChildFriendly: true, requiredCookware: ["空气炸锅"], mainIngredients: ["土豆"] },
+  { name: "炸鸡块", cuisine: "西餐", difficulty: 3, totalMinutes: 30, tags: ["儿童", "炸", "聚餐"], isChildFriendly: true, requiredCookware: W, mainIngredients: ["鸡胸肉"] },
+  { name: "奥尔良烤翅", cuisine: "西餐", difficulty: 2, totalMinutes: 35, tags: ["儿童", "烤", "聚餐"], isChildFriendly: true, requiredCookware: ["空气炸锅"], mainIngredients: ["鸡翅"] },
+
+  // —— 时令/家常补充 ——
+  { name: "清炒藕片", cuisine: "家常菜", difficulty: 2, totalMinutes: 15, tags: ["素菜", "清淡", "快手"], isVegetarian: true, isLight: true, requiredCookware: W, mainIngredients: ["莲藕", "青椒"] },
+  { name: "糖醋藕丁", cuisine: "家常菜", difficulty: 2, totalMinutes: 18, tags: ["下饭", "酸甜", "素菜"], isVegetarian: true, requiredCookware: W, mainIngredients: ["莲藕"] },
+  { name: "板栗烧白菜", cuisine: "家常菜", difficulty: 2, totalMinutes: 20, tags: ["清淡", "素菜"], isVegetarian: true, isLight: true, requiredCookware: W, mainIngredients: ["白菜", "板栗"] },
+  { name: "白菜炖豆腐", cuisine: "东北菜", difficulty: 2, totalMinutes: 25, tags: ["炖", "清淡", "素菜"], isVegetarian: true, isLight: true, requiredCookware: ["炖锅"], mainIngredients: ["白菜", "豆腐", "粉条"] },
+  { name: "猪肉炖粉条", cuisine: "东北菜", difficulty: 3, totalMinutes: 45, tags: ["炖", "下饭", "聚餐"], isHearty: true, requiredCookware: ["炖锅"], mainIngredients: ["五花肉", "粉条", "白菜"] },
+  { name: "酸菜炖排骨", cuisine: "东北菜", difficulty: 3, totalMinutes: 60, tags: ["炖", "下饭"], isHearty: true, requiredCookware: ["炖锅"], mainIngredients: ["排骨", "酸菜"] },
+  { name: "地锅鸡", cuisine: "徽菜", difficulty: 3, totalMinutes: 50, tags: ["下饭", "聚餐", "微辣"], isSpicy: true, isHearty: true, requiredCookware: ["炒锅"], mainIngredients: ["整鸡", "面饼", "青椒"] },
+  { name: "啤酒鸡", cuisine: "家常菜", difficulty: 3, totalMinutes: 45, tags: ["下饭", "炖"], isHearty: true, requiredCookware: ["炖锅"], mainIngredients: ["鸡腿", "啤酒", "土豆"] },
+  { name: "香辣虾", cuisine: "川菜", difficulty: 3, totalMinutes: 25, tags: ["下饭", "麻辣", "宴客"], isSpicy: true, requiredCookware: W, mainIngredients: ["大虾", "干辣椒", "花椒"] },
+  { name: "干锅虾", cuisine: "湘菜", difficulty: 3, totalMinutes: 30, tags: ["下饭", "微辣", "宴客"], isSpicy: true, requiredCookware: W, mainIngredients: ["大虾", "土豆", "藕片"] },
+  { name: "茄汁大虾", cuisine: "家常菜", difficulty: 2, totalMinutes: 20, tags: ["下饭", "儿童", "酸甜"], isChildFriendly: true, requiredCookware: W, mainIngredients: ["大虾", "番茄酱"] },
+  { name: "豆豉鲮鱼油麦菜", cuisine: "粤菜", difficulty: 2, totalMinutes: 15, tags: ["下饭", "快手"], requiredCookware: W, mainIngredients: ["油麦菜", "豆豉鲮鱼"] },
+  { name: "腊肠炒荷兰豆", cuisine: "粤菜", difficulty: 2, totalMinutes: 15, tags: ["下饭", "快手"], requiredCookware: W, mainIngredients: ["腊肠", "荷兰豆"] },
+  { name: "青椒炒香肠", cuisine: "家常菜", difficulty: 2, totalMinutes: 15, tags: ["下饭", "快手"], requiredCookware: W, mainIngredients: ["香肠", "青椒"] },
+  { name: "土豆丝炒青椒", cuisine: "家常菜", difficulty: 2, totalMinutes: 15, tags: ["素菜", "快手", "下饭"], isVegetarian: true, requiredCookware: W, mainIngredients: ["土豆", "青椒"] },
+  { name: "土豆炖豆角", cuisine: "东北菜", difficulty: 2, totalMinutes: 30, tags: ["炖", "下饭", "素菜"], isVegetarian: true, requiredCookware: ["炖锅"], mainIngredients: ["土豆", "豆角"] },
+  { name: "红烧茄子", cuisine: "家常菜", difficulty: 2, totalMinutes: 20, tags: ["下饭", "素菜"], isVegetarian: true, requiredCookware: W, mainIngredients: ["茄子"] },
+  { name: "肉末蒸蛋", cuisine: "家常菜", difficulty: 2, totalMinutes: 18, tags: ["蒸", "清淡", "儿童"], isChildFriendly: true, isLight: true, requiredCookware: ["蒸锅"], mainIngredients: ["鸡蛋", "肉末"] },
+  { name: "番茄炖豆腐", cuisine: "家常菜", difficulty: 2, totalMinutes: 20, tags: ["下饭", "豆制品", "儿童"], isChildFriendly: true, requiredCookware: W, mainIngredients: ["豆腐", "番茄"] },
+  { name: "韭菜炒豆芽", cuisine: "家常菜", difficulty: 1, totalMinutes: 10, tags: ["素菜", "快手", "清淡"], isVegetarian: true, isLight: true, requiredCookware: W, mainIngredients: ["韭菜", "豆芽"] },
+  { name: "豆芽炒韭菜", cuisine: "家常菜", difficulty: 1, totalMinutes: 10, tags: ["素菜", "快手"], isVegetarian: true, requiredCookware: W, mainIngredients: ["豆芽", "韭菜", "胡萝卜"] },
+  { name: "青椒炒木耳", cuisine: "家常菜", difficulty: 2, totalMinutes: 12, tags: ["素菜", "快手", "清淡"], isVegetarian: true, isLight: true, requiredCookware: W, mainIngredients: ["青椒", "木耳"] },
+  { name: "西红柿炖牛肉", cuisine: "家常菜", difficulty: 3, totalMinutes: 90, tags: ["炖", "下饭", "儿童"], isHearty: true, isChildFriendly: true, requiredCookware: ["炖锅"], mainIngredients: ["牛肉", "番茄", "胡萝卜"] },
+  { name: "咖喱土豆鸡块", cuisine: "家常菜", difficulty: 2, totalMinutes: 40, tags: ["下饭", "儿童"], isChildFriendly: true, requiredCookware: W, mainIngredients: ["鸡腿", "土豆", "咖喱块"] },
+  { name: "蒜蓉蒸丝瓜", cuisine: "粤菜", difficulty: 2, totalMinutes: 15, tags: ["蒸", "清淡", "素菜"], isVegetarian: true, isLight: true, requiredCookware: ["蒸锅"], mainIngredients: ["丝瓜", "大蒜", "粉丝"] },
+  { name: "冬瓜炖排骨", cuisine: "家常菜", difficulty: 2, totalMinutes: 60, tags: ["汤", "清淡"], isSoup: true, isLight: true, requiredCookware: ["炖锅"], mainIngredients: ["排骨", "冬瓜"] },
+  { name: "南瓜蒸排骨", cuisine: "家常菜", difficulty: 2, totalMinutes: 35, tags: ["蒸", "下饭"], requiredCookware: ["蒸锅"], mainIngredients: ["排骨", "南瓜"] },
+  { name: "豉汁蒸凤爪", cuisine: "粤菜", difficulty: 3, totalMinutes: 60, tags: ["蒸", "宴客", "早茶"], requiredCookware: ["蒸锅"], mainIngredients: ["鸡爪", "豆豉"] },
+  { name: "白灼菜心", cuisine: "粤菜", difficulty: 1, totalMinutes: 10, tags: ["素菜", "清淡", "快手"], isVegetarian: true, isLight: true, requiredCookware: ["汤锅"], mainIngredients: ["菜心", "蚝油"] },
+  { name: "蒜蓉炒苋菜", cuisine: "家常菜", difficulty: 1, totalMinutes: 8, tags: ["素菜", "快手", "清淡"], isVegetarian: true, isLight: true, requiredCookware: W, mainIngredients: ["苋菜", "大蒜"] },
+  { name: "秋葵炒蛋", cuisine: "家常菜", difficulty: 1, totalMinutes: 12, tags: ["清淡", "快手"], isLight: true, isChildFriendly: true, requiredCookware: W, mainIngredients: ["秋葵", "鸡蛋"] },
+  { name: "白灼秋葵", cuisine: "粤菜", difficulty: 1, totalMinutes: 10, tags: ["清淡", "快手", "减脂"], isVegetarian: true, isLight: true, requiredCookware: ["汤锅"], mainIngredients: ["秋葵"] },
+  { name: "蒜蓉荷兰豆", cuisine: "家常菜", difficulty: 1, totalMinutes: 10, tags: ["素菜", "快手", "清淡"], isVegetarian: true, isLight: true, requiredCookware: W, mainIngredients: ["荷兰豆", "大蒜"] },
+  { name: "西芹百合炒虾仁", cuisine: "粤菜", difficulty: 2, totalMinutes: 18, tags: ["清淡", "宴客"], isLight: true, requiredCookware: W, mainIngredients: ["虾仁", "芹菜", "百合"] },
+  { name: "马蹄炒木耳", cuisine: "粤菜", difficulty: 2, totalMinutes: 15, tags: ["清淡", "素菜"], isVegetarian: true, isLight: true, requiredCookware: W, mainIngredients: ["荸荠", "木耳", "胡萝卜"] },
+  { name: "韭黄炒蛋", cuisine: "粤菜", difficulty: 1, totalMinutes: 10, tags: ["快手", "清淡"], isChildFriendly: true, requiredCookware: W, mainIngredients: ["韭黄", "鸡蛋"] },
+  { name: "蒜苗炒蛋", cuisine: "家常菜", difficulty: 1, totalMinutes: 10, tags: ["快手", "下饭"], requiredCookware: W, mainIngredients: ["蒜苗", "鸡蛋"] },
+  { name: "油焖春笋", cuisine: "浙菜", difficulty: 2, totalMinutes: 20, tags: ["下饭", "素菜"], isVegetarian: true, requiredCookware: W, mainIngredients: ["春笋"] },
+  { name: "冬笋炒腊肉", cuisine: "徽菜", difficulty: 2, totalMinutes: 20, tags: ["下饭", "宴客"], requiredCookware: W, mainIngredients: ["冬笋", "腊肉"] },
+  { name: "酸辣鱿鱼", cuisine: "川菜", difficulty: 2, totalMinutes: 18, tags: ["下饭", "酸辣", "快手"], isSpicy: true, requiredCookware: W, mainIngredients: ["鱿鱼", "青椒", "洋葱"] },
+  { name: "西葫芦炒虾皮", cuisine: "家常菜", difficulty: 1, totalMinutes: 12, tags: ["快手", "清淡", "素菜"], isLight: true, requiredCookware: W, mainIngredients: ["西葫芦", "虾皮"] },
+  { name: "豌豆炒虾仁", cuisine: "苏菜", difficulty: 2, totalMinutes: 15, tags: ["清淡", "儿童"], isChildFriendly: true, isLight: true, requiredCookware: W, mainIngredients: ["豌豆", "虾仁"] },
+];
+
+// ============================================================
 // 主入口
 // ============================================================
 async function main() {
@@ -2737,6 +3134,49 @@ async function main() {
     });
   }
   console.log(`   ✓ 菜品完成（跳过 ${skipped} 道用户已编辑的内置菜）`);
+
+  // 3. 菜品骨架（仅元数据，无菜谱）：扩充可选范围，菜谱由 AI 按需补全
+  const fullDishNames = new Set(DISHES.map((d) => d.name));
+  console.log(`\n🧩 写入 ${DISH_SKELETONS.length} 道菜品骨架（无菜谱，AI 按需补全）...`);
+  let skelSkipped = 0;
+  for (const s of DISH_SKELETONS) {
+    // 与完整菜重名的骨架跳过（完整菜已带菜谱，不能被无菜谱版本覆盖）
+    if (fullDishNames.has(s.name)) {
+      skelSkipped++;
+      continue;
+    }
+    const existing = await prisma.dish.findUnique({
+      where: { name: s.name },
+      select: { userEdited: true },
+    });
+    if (existing?.userEdited) {
+      skelSkipped++;
+      continue;
+    }
+    // 注意：create/update 都不写 recipe —— 已有菜谱（含 AI 补全过的）原样保留
+    const meta = {
+      cuisine: s.cuisine,
+      difficulty: s.difficulty,
+      totalMinutes: s.totalMinutes,
+      servings: 2,
+      tags: s.tags,
+      isSpicy: s.isSpicy ?? false,
+      isChildFriendly: s.isChildFriendly ?? false,
+      isLight: s.isLight ?? false,
+      isHearty: s.isHearty ?? false,
+      isSoup: s.isSoup ?? false,
+      isStaple: s.isStaple ?? false,
+      isVegetarian: s.isVegetarian ?? false,
+      requiredCookware: s.requiredCookware,
+      mainIngredients: s.mainIngredients,
+    };
+    await prisma.dish.upsert({
+      where: { name: s.name },
+      create: { name: s.name, source: "SEED", ...meta },
+      update: meta,
+    });
+  }
+  console.log(`   ✓ 骨架完成（跳过 ${skelSkipped} 道重名/已编辑）`);
 
   console.log(`\n✅ 种子数据初始化完成`);
 }
