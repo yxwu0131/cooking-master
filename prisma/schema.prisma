@@ -474,6 +474,8 @@ model MealSession {
   feedbacks     Feedback[]
 
   @@index([familyId, createdAt])
+  // dashboard「最近做了什么」按 status + targetTime 取最近 DONE 会话
+  @@index([familyId, status, targetTime])
 }
 
 enum MealType {
@@ -725,4 +727,6 @@ model Feedback {
 
   @@index([sessionId])
   @@index([dishId])
+  // 反馈页按 createdAt 倒序取最近 N 条
+  @@index([createdAt])
 }

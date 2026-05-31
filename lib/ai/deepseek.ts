@@ -32,6 +32,10 @@ interface CompletionOptions {
 /**
  * DeepSeek API 客户端（OpenAI 兼容）
  */
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+// 指数退避 + 抖动（毫秒）
+const backoffMs = (attempt: number) => 500 * 2 ** (attempt - 1) + Math.floor(Math.random() * 250);
+
 async function callDeepSeek(
   messages: ChatMessage[],
   options: CompletionOptions = {}
@@ -55,36 +59,56 @@ async function callDeepSeek(
     body.response_format = { type: "json_object" };
   }
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 180000);
+  // 轻量重试：对瞬时 5xx/429/网络错重试 ≤2 次（指数退避）。
+  // 鉴权/参数类 4xx 与本地 180s 超时不重试（避免 3×180s 长等待）。
+  const maxAttempts = 3;
+  let lastErr: unknown;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 180000);
+    try {
+      const res = await fetch(`${apiBase}/chat/completions`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
 
-  try {
-    const res = await fetch(`${apiBase}/chat/completions`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-      signal: controller.signal,
-    });
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        if ((res.status >= 500 || res.status === 429) && attempt < maxAttempts) {
+          lastErr = new Error(`DeepSeek API 错误 ${res.status}`);
+          await sleep(backoffMs(attempt));
+          continue;
+        }
+        throw new Error(`DeepSeek API 错误 ${res.status}: ${text.slice(0, 200)}`);
+      }
 
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      throw new Error(`DeepSeek API 错误 ${res.status}: ${text.slice(0, 200)}`);
+      const data = (await res.json()) as {
+        choices: Array<{ message: { content: string } }>;
+      };
+      const content = data.choices?.[0]?.message?.content;
+      if (!content) {
+        throw new Error("DeepSeek 返回空内容");
+      }
+      return content;
+    } catch (e) {
+      lastErr = e;
+      const msg = e instanceof Error ? e.message : "";
+      const transient = /network|fetch failed|econnreset|enotfound|terminated|socket/i.test(msg);
+      if (transient && attempt < maxAttempts) {
+        await sleep(backoffMs(attempt));
+        continue;
+      }
+      throw e;
+    } finally {
+      clearTimeout(timeout);
     }
-
-    const data = (await res.json()) as {
-      choices: Array<{ message: { content: string } }>;
-    };
-    const content = data.choices?.[0]?.message?.content;
-    if (!content) {
-      throw new Error("DeepSeek 返回空内容");
-    }
-    return content;
-  } finally {
-    clearTimeout(timeout);
   }
+  throw lastErr instanceof Error ? lastErr : new Error("DeepSeek 调用失败");
 }
 
 /**

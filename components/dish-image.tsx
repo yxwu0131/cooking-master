@@ -50,7 +50,9 @@ export function DishImage({
           onError={() => setErrored(true)}
         />
       ) : (
-        <span aria-hidden>{dishEmoji(cuisine, isSoup, isVegetarian)}</span>
+        <span role="img" aria-label={name}>
+          {dishEmoji(cuisine, isSoup, isVegetarian)}
+        </span>
       )}
     </div>
   );

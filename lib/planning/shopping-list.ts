@@ -70,6 +70,8 @@ export async function generateShoppingListForMenu(menuId: string) {
   function canonicalName(raw: string): string {
     return aliasToCanonical.get(raw) ?? raw;
   }
+  // 常备调料也归一化，避免别名（生抽↔酱油、生粉↔淀粉）漏跳/错列（与下面 isHave 同口径）
+  const commonSeasoningsCanon = new Set([...commonSeasonings].map(canonicalName));
 
   // 汇总
   type Aggregated = {
@@ -101,9 +103,9 @@ export async function generateShoppingListForMenu(menuId: string) {
     for (const ing of recipeIngredients) {
       add(ing.name, ing.quantity * factor, ing.unit, ing.optional ?? false);
     }
-    // 调料：只列非常备的
+    // 调料：只列非常备的（原始名或归一化后命中常备都跳过）
     for (const s of recipeSeasonings) {
-      if (commonSeasonings.has(s.name)) continue;
+      if (commonSeasonings.has(s.name) || commonSeasoningsCanon.has(canonicalName(s.name))) continue;
       add(s.name, s.quantity * factor, s.unit, true);
     }
 
@@ -124,7 +126,7 @@ export async function generateShoppingListForMenu(menuId: string) {
           );
           const isHave =
             haveSet.has(entry.name) ||
-            commonSeasonings.has(entry.name) ||
+            commonSeasoningsCanon.has(entry.name) ||
             (cat?.aliases.some((a) => haveSet.has(a)) ?? false);
           return {
             ingredientId: cat?.id ?? null,

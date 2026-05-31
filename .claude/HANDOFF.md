@@ -8,7 +8,8 @@
 > 5. **5 小修**：AI 菜单补 servings 按人数 / menuPlan flexNum / finishCooking 状态机校验 / 抽 `lib/ai/error-message.ts` 统一 AI 错误中文映射。（updateDishRecipe 一度限 ADMIN，后按用户意见撤销——家庭成员均可编辑做法，因自助注册已关闭。）
 > - **新增两个安全开关**（默认关，公网保持关）：`ALLOW_OPEN_REGISTRATION`、`ENABLE_DISH_IMAGE_FETCH`，已写进 `.env.example`。
 > - **上 prod 必做**：① 决策33 的 6 道重复菜 seed 已删但 **prod 存量仍在**，部署后跑一次 `deleteMany`（有引用先 reassign）才清干净；② 骨架菜 recipe 不从 dev 搬；③ 部署后这两个开关不要在 prod 设 1。
-> - **未做（低优先，记账）**：AI 零重试、canonicalKey 去重、MenuDish onDelete、调料别名归一、UX/a11y 完整维度（工作流那个 agent 卡住没跑完）。
+> - **第二批硬化已补**（同日，tsc+build 全过）：AI 调用轻量重试、采购调料别名归一、补 2 索引(MealSession/Feedback)、补谱 P2002 友好兜底、主食兜底退到任意 isStaple、flexNum 区间陷阱修复、emoji a11y label、finishCooking 批量 $transaction。
+> - **仍刻意未做（需 schema 迁移设计）**：`Dish.canonicalKey` 去重字段、`MenuDish.dishId` 改可空+SetNull；及蒸锅占灶/混单位等 nit。
 >
 > ---
 >

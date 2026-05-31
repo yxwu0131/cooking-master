@@ -106,7 +106,9 @@ const flexNum = (fallback = 0) =>
   z.preprocess((v) => {
     if (typeof v === "number") return Number.isFinite(v) ? v : fallback;
     if (typeof v === "string") {
-      const n = parseFloat(v.replace(/[^\d.\-]/g, ""));
+      // 抽取第一个数字 token：避免 "2-3" 误拼、"2~3" 被剥成 23 等区间陷阱（取下界更稳）
+      const m = v.match(/-?\d+(?:\.\d+)?/);
+      const n = m ? parseFloat(m[0]) : NaN;
       return Number.isFinite(n) ? n : fallback;
     }
     return fallback;

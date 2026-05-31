@@ -261,28 +261,36 @@ export async function generateDishRecipeAction(dishId: string) {
     };
   }
 
-  await prisma.dish.update({
-    where: { id: dish.id },
-    data: {
-      cuisine: generated.cuisine,
-      difficulty: generated.difficulty,
-      totalMinutes: generated.totalMinutes,
-      isSpicy: generated.isSpicy,
-      isVegetarian: generated.isVegetarian,
-      isSoup: generated.isSoup,
-      requiredCookware: generated.requiredCookware,
-      mainIngredients: generated.mainIngredients,
-      recipe: {
-        create: {
-          ingredients: generated.ingredients,
-          seasonings: generated.seasonings,
-          steps: generated.steps,
-          tips: generated.tips,
-          heatNotes: generated.heatNotes ?? null,
+  try {
+    await prisma.dish.update({
+      where: { id: dish.id },
+      data: {
+        cuisine: generated.cuisine,
+        difficulty: generated.difficulty,
+        totalMinutes: generated.totalMinutes,
+        isSpicy: generated.isSpicy,
+        isVegetarian: generated.isVegetarian,
+        isSoup: generated.isSoup,
+        requiredCookware: generated.requiredCookware,
+        mainIngredients: generated.mainIngredients,
+        recipe: {
+          create: {
+            ingredients: generated.ingredients,
+            seasonings: generated.seasonings,
+            steps: generated.steps,
+            tips: generated.tips,
+            heatNotes: generated.heatNotes ?? null,
+          },
         },
       },
-    },
-  });
+    });
+  } catch (e) {
+    // 并发：另一次生成（或确认菜单的 ensureRecipes）已抢先建好菜谱，撞 Recipe.dishId 唯一约束
+    if (e && typeof e === "object" && "code" in e && (e as { code?: string }).code === "P2002") {
+      return { ok: false as const, error: "做法刚刚已生成，请刷新查看" };
+    }
+    throw e;
+  }
 
   revalidatePath(`/dishes/${dish.id}`);
   revalidatePath("/dishes");

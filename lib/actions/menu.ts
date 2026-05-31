@@ -213,11 +213,20 @@ export async function generateMenuPlansAction(sessionId: string) {
   const needStaple = ["LUNCH", "DINNER"].includes(session.mealType);
   let stapleDishMeta: { id: string; name: string } | null = null;
   if (needStaple) {
-    const staple = await prisma.dish.findFirst({
-      where: { isStaple: true, name: "白米饭" },
-      select: { id: true, name: true },
-    });
-    stapleDishMeta = staple;
+    // 优先「白米饭」，若被改名/删了则退到库里任意一道主食，避免静默丢主食
+    stapleDishMeta =
+      (await prisma.dish.findFirst({
+        where: { isStaple: true, name: "白米饭" },
+        select: { id: true, name: true },
+      })) ??
+      (await prisma.dish.findFirst({
+        where: { isStaple: true },
+        orderBy: { name: "asc" },
+        select: { id: true, name: true },
+      }));
+    if (!stapleDishMeta) {
+      console.warn("[generateMenuPlans] 库里没有任何 isStaple 主食，主食兜底已跳过");
+    }
   }
   for (const plan of aiOutput.plans) {
     if (!needStaple || !stapleDishMeta) continue;
@@ -508,24 +517,27 @@ export async function finishCookingAction(sessionId: string) {
   // 更新 FamilyDish 的烹饪计数与最近烹饪时间
   const confirmedMenu = result.menus[0];
   if (confirmedMenu) {
-    for (const md of confirmedMenu.dishes) {
-      await prisma.familyDish.upsert({
-        where: {
-          familyId_dishId: { familyId, dishId: md.dishId },
-        },
-        create: {
-          familyId,
-          dishId: md.dishId,
-          status: "LOVED",
-          cookCount: 1,
-          lastCookedAt: new Date(),
-        },
-        update: {
-          cookCount: { increment: 1 },
-          lastCookedAt: new Date(),
-        },
-      });
-    }
+    // 一批 upsert 走单个事务，避免逐条串行往返（N+1）
+    await prisma.$transaction(
+      confirmedMenu.dishes.map((md) =>
+        prisma.familyDish.upsert({
+          where: {
+            familyId_dishId: { familyId, dishId: md.dishId },
+          },
+          create: {
+            familyId,
+            dishId: md.dishId,
+            status: "LOVED",
+            cookCount: 1,
+            lastCookedAt: new Date(),
+          },
+          update: {
+            cookCount: { increment: 1 },
+            lastCookedAt: new Date(),
+          },
+        })
+      )
+    );
   }
 
   revalidatePath(`/cook/${sessionId}`);
