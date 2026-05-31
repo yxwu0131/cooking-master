@@ -5,6 +5,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireFamilyId, requireUser } from "@/lib/auth-helper";
 import { getAIProvider } from "@/lib/ai/provider";
+import { mapAIErrorToChinese } from "@/lib/ai/error-message";
 
 const FAMILY_DISH_STATUSES = [
   "STAPLE",
@@ -157,7 +158,7 @@ export async function parseWishToDishAction(wishId: string) {
     console.error("[parseWishToDish] AI 调用失败:", e);
     return {
       ok: false as const,
-      error: e instanceof Error ? e.message : "AI 解析失败，请稍后重试",
+      error: mapAIErrorToChinese(e, "AI 解析失败，请稍后重试"),
     };
   }
 
@@ -226,6 +227,66 @@ export async function parseWishToDishAction(wishId: string) {
   revalidatePath("/dishes");
   revalidatePath("/dashboard");
   return { ok: true as const, dishId: dish.id, dishName: dish.name };
+}
+
+export async function generateDishRecipeAction(dishId: string) {
+  const familyId = await requireFamilyId();
+  const dish = await prisma.dish.findUnique({
+    where: { id: dishId },
+    include: { recipe: true },
+  });
+  if (!dish) return { ok: false as const, error: "菜品不存在" };
+  if (dish.recipe) return { ok: false as const, error: "已有做法，无需重新生成" };
+
+  const [kitchen, preference] = await Promise.all([
+    prisma.kitchenProfile.findUnique({ where: { familyId } }),
+    prisma.familyPreference.findUnique({ where: { familyId } }),
+  ]);
+  const flags = (preference?.tasteFlags as Record<string, boolean>) ?? {};
+
+  let generated;
+  try {
+    generated = await getAIProvider().generateRecipe({
+      dishName: dish.name,
+      servings: dish.servings || 2,
+      availableSeasonings: kitchen?.commonSeasonings ?? [],
+      noSpicy: flags.noSpicy === true,
+      lowOilSalt: flags.lowOilSalt === true,
+    });
+  } catch (e) {
+    console.error("[generateDishRecipe] AI 调用失败:", e);
+    return {
+      ok: false as const,
+      error: mapAIErrorToChinese(e, "AI 生成失败，请稍后重试"),
+    };
+  }
+
+  await prisma.dish.update({
+    where: { id: dish.id },
+    data: {
+      cuisine: generated.cuisine,
+      difficulty: generated.difficulty,
+      totalMinutes: generated.totalMinutes,
+      isSpicy: generated.isSpicy,
+      isVegetarian: generated.isVegetarian,
+      isSoup: generated.isSoup,
+      requiredCookware: generated.requiredCookware,
+      mainIngredients: generated.mainIngredients,
+      recipe: {
+        create: {
+          ingredients: generated.ingredients,
+          seasonings: generated.seasonings,
+          steps: generated.steps,
+          tips: generated.tips,
+          heatNotes: generated.heatNotes ?? null,
+        },
+      },
+    },
+  });
+
+  revalidatePath(`/dishes/${dish.id}`);
+  revalidatePath("/dishes");
+  return { ok: true as const, dishName: dish.name };
 }
 
 export async function deleteWishAction(wishId: string) {
@@ -310,7 +371,7 @@ const updateDishRecipeSchema = z.object({
 export type UpdateDishRecipeInput = z.infer<typeof updateDishRecipeSchema>;
 
 export async function updateDishRecipeAction(input: UpdateDishRecipeInput) {
-  await requireFamilyId(); // 登录即可，菜品库目前全局共享
+  await requireFamilyId(); // 登录即可：菜品库全局共享，家庭成员均可编辑做法（自助注册已默认关闭）
   const parsed = updateDishRecipeSchema.safeParse(input);
   if (!parsed.success) {
     return {

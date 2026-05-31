@@ -7,6 +7,7 @@ import { getAIProvider, type MenuRecommendInput } from "@/lib/ai/provider";
 import { generateShoppingListForMenu } from "@/lib/planning/shopping-list";
 import { generateCookingPlanForMenu } from "@/lib/planning/cooking-plan";
 import { ensureRecipesForMenu } from "@/lib/planning/ensure-recipes";
+import { mapAIErrorToChinese } from "@/lib/ai/error-message";
 
 /**
  * 调用 AI 为指定 Session 生成菜单方案（多套）。
@@ -195,7 +196,7 @@ export async function generateMenuPlansAction(sessionId: string) {
     aiOutput = await getAIProvider().recommendMenu(aiInput);
   } catch (e) {
     console.error("[generateMenuPlans] AI 调用失败:", e);
-    return { ok: false as const, error: mapAIErrorToChinese(e) };
+    return { ok: false as const, error: mapAIErrorToChinese(e, "AI 推荐失败，请稍后重试") };
   }
 
   // 清理该 session 旧的草稿菜单（避免反复生成堆积）
@@ -282,6 +283,8 @@ export async function generateMenuPlansAction(sessionId: string) {
             dishId: ensureDishIds[dIdx].id,
             dishNameSnapshot: ai.name,
             position: dIdx,
+            // 按本餐就餐人数定份量（否则落 schema 默认 2，采购/备菜量与人数脱节）
+            servings: Math.max(1, session.eaterAdults + session.eaterKids),
             usedInventory: ai.usedFromInventory,
             missingIngredients: ai.missingIngredients,
           })),
@@ -297,31 +300,6 @@ export async function generateMenuPlansAction(sessionId: string) {
 
   revalidatePath(`/cook/${sessionId}`);
   return { ok: true as const, count: aiOutput.plans.length };
-}
-
-function mapAIErrorToChinese(e: unknown): string {
-  if (!(e instanceof Error)) return "AI 推荐失败，请稍后重试";
-  const msg = e.message ?? "";
-  const name = e.name ?? "";
-  if (name === "AbortError" || /aborted|timeout/i.test(msg)) {
-    return "AI 响应超时，请稍后再试（可能模型在思考较复杂的菜单）";
-  }
-  if (/json|parse|schema|zod/i.test(msg)) {
-    return "AI 返回格式异常，请重新生成";
-  }
-  if (/5\d\d|server error|service unavailable/i.test(msg)) {
-    return "AI 服务暂时不可用，请稍后重试";
-  }
-  if (/401|403|api[_ ]?key|unauthorized/i.test(msg)) {
-    return "AI 服务认证失败，请检查 API Key 配置";
-  }
-  if (/429|rate limit|too many/i.test(msg)) {
-    return "AI 请求过于频繁，稍等一分钟再试";
-  }
-  if (/network|fetch failed|econnreset|enotfound/i.test(msg)) {
-    return "网络连接异常，请检查网络后重试";
-  }
-  return "AI 推荐失败，请稍后重试";
 }
 
 function deriveDesiredStructure(adults: number, kids: number, hasGuest: boolean): string {
@@ -516,6 +494,10 @@ export async function finishCookingAction(sessionId: string) {
   if (!result) return { ok: false as const, error: "Session 不存在" };
   if (result.chefId !== user.id) {
     return { ok: false as const, error: "只有当日厨师可以完成做饭" };
+  }
+  // 状态机校验：只能从「做饭中」完成，防止从其他状态重复触发导致 cookCount 重复累加
+  if (result.status !== "COOKING") {
+    return { ok: false as const, error: "当前不在做饭中，无法完成做饭" };
   }
 
   await prisma.mealSession.update({

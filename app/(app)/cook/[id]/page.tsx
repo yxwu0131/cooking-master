@@ -36,6 +36,7 @@ export default async function CookSessionPage({
                   totalMinutes: true,
                   isSoup: true,
                   isStaple: true,
+                  imageUrl: true,
                   recipe: {
                     select: {
                       ingredients: true,
@@ -83,6 +84,7 @@ export default async function CookSessionPage({
         isStaple: true,
         isVegetarian: true,
         isChildFriendly: true,
+        imageUrl: true,
       },
       orderBy: { name: "asc" },
     }),

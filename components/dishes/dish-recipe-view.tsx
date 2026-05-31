@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { toast } from "sonner";
-import { Pencil, X, Plus, Trash2, Save, Timer, Flame, Users } from "lucide-react";
+import { Pencil, X, Plus, Trash2, Save, Timer, Flame, Users, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { DishImage } from "@/components/dish-image";
 import {
   Select,
   SelectContent,
@@ -20,6 +21,7 @@ import {
 import { TagsInput } from "@/components/ui/tags-input";
 import {
   updateDishRecipeAction,
+  generateDishRecipeAction,
   type UpdateDishRecipeInput,
 } from "@/lib/actions/dishes";
 
@@ -43,6 +45,7 @@ type RecipeStep = {
 type DishData = {
   id: string;
   name: string;
+  imageUrl: string | null;
   cuisine: string | null;
   difficulty: number;
   totalMinutes: number;
@@ -173,8 +176,31 @@ function ViewMode({ dish, onEdit }: { dish: DishData; onEdit: () => void }) {
   const ingredients = dish.recipe?.ingredients ?? [];
   const seasonings = dish.recipe?.seasonings ?? [];
   const steps = (dish.recipe?.steps ?? []).slice().sort((a, b) => a.order - b.order);
+  const [aiPending, startAITransition] = React.useTransition();
+
+  function generateWithAI() {
+    startAITransition(async () => {
+      const result = await generateDishRecipeAction(dish.id);
+      if (result.ok) {
+        toast.success(`已为「${result.dishName}」生成做法`);
+      } else {
+        toast.error(result.error);
+      }
+    });
+  }
   return (
     <div className="space-y-6">
+      {dish.imageUrl && (
+        <DishImage
+          imageUrl={dish.imageUrl}
+          name={dish.name}
+          cuisine={dish.cuisine}
+          isSoup={dish.isSoup}
+          isVegetarian={dish.isVegetarian}
+          className="w-full aspect-[16/10] rounded-2xl"
+          sizes="(max-width: 768px) 100vw, 768px"
+        />
+      )}
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-2 flex-1 min-w-0">
           <h1 className="text-3xl font-bold tracking-tight">{dish.name}</h1>
@@ -211,13 +237,24 @@ function ViewMode({ dish, onEdit }: { dish: DishData; onEdit: () => void }) {
       </div>
 
       {ingredients.length === 0 && seasonings.length === 0 && steps.length === 0 ? (
-        <Card>
-          <CardContent className="py-10 text-center space-y-3">
-            <p className="text-sm text-muted-foreground">这道菜还没有做法。</p>
-            <Button onClick={onEdit}>
-              <Pencil className="size-4" />
-              立即添加
-            </Button>
+        <Card className="border-primary/15 bg-gradient-to-br from-primary/8 via-accent/40 to-background">
+          <CardContent className="py-10 text-center space-y-4">
+            <div className="inline-flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary mx-auto">
+              <Sparkles className="size-6" />
+            </div>
+            <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+              这道菜还没有做法。让 AI 按家常思路补一份，或自己手动填。
+            </p>
+            <div className="flex gap-2 justify-center flex-wrap">
+              <Button onClick={generateWithAI} disabled={aiPending}>
+                <Sparkles className="size-4" />
+                {aiPending ? "AI 生成中..." : "让 AI 生成做法"}
+              </Button>
+              <Button onClick={onEdit} variant="outline" disabled={aiPending}>
+                <Pencil className="size-4" />
+                手动添加
+              </Button>
+            </div>
           </CardContent>
         </Card>
       ) : (

@@ -38,7 +38,8 @@ async function callDeepSeek(
 ): Promise<string> {
   const apiKey = process.env.DEEPSEEK_API_KEY;
   const apiBase = process.env.DEEPSEEK_API_BASE ?? "https://api.deepseek.com/v1";
-  const model = options.model ?? process.env.DEEPSEEK_MODEL ?? "deepseek-v4-pro";
+  // 兜底用 deepseek-chat（非 reasoning，结构化任务快十倍）；v4-pro 会跑满 180s 超时，见 NOTES 坑9
+  const model = options.model ?? process.env.DEEPSEEK_MODEL ?? "deepseek-chat";
 
   if (!apiKey) {
     throw new Error("DEEPSEEK_API_KEY 未配置");

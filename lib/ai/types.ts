@@ -140,8 +140,9 @@ export const menuPlanSchema = z.object({
     .min(1)
     .max(6),
   reasoning: z.string(),
-  estimatedMinutes: z.number(),
-  difficulty: z.number().min(1).max(5),
+  // 宽松解析：AI 偶尔把时长/难度返回成 "约40"/字符串或越界，避免整条推荐校验失败（历史坑同类）
+  estimatedMinutes: flexNum(30),
+  difficulty: flexNum(3).pipe(z.number()).transform((n) => Math.min(5, Math.max(1, Math.round(n)))),
   risks: z.array(z.string()),
 });
 

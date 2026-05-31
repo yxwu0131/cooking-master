@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Heart, Star, Baby, Ban, ChevronDown } from "lucide-react";
+import { Heart, Star, Baby, Ban } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { setFamilyDishStatusAction, removeFamilyDishAction } from "@/lib/actions/dishes";
+import { DishImage } from "@/components/dish-image";
 import { cn } from "@/lib/utils";
 
 type Dish = {
@@ -31,6 +32,7 @@ type Dish = {
   isHearty: boolean;
   isSoup: boolean;
   isVegetarian: boolean;
+  imageUrl: string | null;
   familyDishes: { status: string; rating: number | null; cookCount: number }[];
 };
 
@@ -45,24 +47,6 @@ const STATUS_LABELS: Record<string, string> = {
   DISLIKED: "不喜欢",
   BLOCKED: "别推荐",
 };
-
-const CUISINE_EMOJI: Record<string, string> = {
-  家常菜: "🍳",
-  川菜: "🌶️",
-  粤菜: "🦐",
-  湘菜: "🔥",
-  西餐: "🍝",
-  江浙菜: "🦀",
-  北方菜: "🥟",
-  主食: "🍚",
-};
-
-function dishEmoji(cuisine: string | null, isSoup: boolean, isVegetarian: boolean) {
-  if (isSoup) return "🍲";
-  if (cuisine && CUISINE_EMOJI[cuisine]) return CUISINE_EMOJI[cuisine];
-  if (isVegetarian) return "🥬";
-  return "🍽️";
-}
 
 const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "success"> = {
   STAPLE: "success",
@@ -166,9 +150,15 @@ export function DishesBrowse({ dishes }: { dishes: Dish[] }) {
             <Card key={d.id} className="hover:shadow-md hover:-translate-y-0.5 transition-all">
               <CardContent className="p-4">
                 <div className="flex items-start gap-3">
-                  <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-accent text-2xl leading-none">
-                    {dishEmoji(d.cuisine, d.isSoup, d.isVegetarian)}
-                  </div>
+                  <DishImage
+                    imageUrl={d.imageUrl}
+                    name={d.name}
+                    cuisine={d.cuisine}
+                    isSoup={d.isSoup}
+                    isVegetarian={d.isVegetarian}
+                    className="size-16 rounded-xl text-3xl"
+                    sizes="64px"
+                  />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-2">
                       <Link
@@ -240,11 +230,8 @@ export function DishesBrowse({ dishes }: { dishes: Dish[] }) {
                     <span className="text-xs text-muted-foreground">未标记</span>
                   )}
                   <Select onValueChange={(v) => v && setStatus(d.id, v)} value="">
-                    <SelectTrigger className="h-7 w-auto ml-auto" disabled={pending}>
-                      <span className="text-xs px-1 flex items-center gap-1">
-                        标记
-                        <ChevronDown className="size-3" />
-                      </span>
+                    <SelectTrigger className="h-7 w-auto ml-auto gap-1 px-2.5 text-xs" disabled={pending}>
+                      <span>标记</span>
                     </SelectTrigger>
                     <SelectContent>
                       {Object.entries(STATUS_LABELS).map(([k, v]) => (

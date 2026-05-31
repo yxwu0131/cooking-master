@@ -25,7 +25,7 @@ export default async function DishesPage() {
 
   return (
     <div className="container mx-auto max-w-5xl px-4 py-6">
-      <div className="space-y-1 mb-6">
+      <div className="mb-6 space-y-1">
         <h1 className="text-2xl font-bold tracking-tight">菜品库</h1>
         <p className="text-sm text-muted-foreground">
           浏览菜品打标签，沉淀灵感为以后做饭做准备。

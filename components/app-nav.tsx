@@ -19,7 +19,8 @@ const navItems = [
 export function AppNav({ userName }: { userName?: string | null }) {
   const pathname = usePathname();
   return (
-    <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/70">
+    <>
+    <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/70 pt-[env(safe-area-inset-top)]">
       <div className="container mx-auto max-w-7xl px-4 flex h-16 items-center gap-4">
         <Link href="/dashboard" className="flex items-center gap-2.5 font-bold text-lg">
           <span className="inline-flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm shadow-primary/30">
@@ -59,7 +60,9 @@ export function AppNav({ userName }: { userName?: string | null }) {
           </form>
         </div>
       </div>
-      {/* 移动端底部导航 */}
+    </header>
+      {/* 移动端底部导航：必须放在 header 外。header 的 backdrop-blur 会成为 fixed 子元素的包含块，
+          导致 bottom-0 相对 header（仅 65px 高）定位、整条导航被顶到屏幕最上方。移出后才正确钉在视口底部。 */}
       <nav className="md:hidden border-t bg-background/95 backdrop-blur-md fixed bottom-0 left-0 right-0 z-40 pb-[env(safe-area-inset-bottom)]">
         <div className="grid grid-cols-5">
           {navItems.slice(1).map((item) => {
@@ -88,6 +91,6 @@ export function AppNav({ userName }: { userName?: string | null }) {
           })}
         </div>
       </nav>
-    </header>
+    </>
   );
 }

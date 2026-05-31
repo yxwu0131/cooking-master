@@ -1,6 +1,8 @@
+import { Users } from "lucide-react";
 import { getCurrentFamily, requireUser } from "@/lib/auth-helper";
 import { prisma } from "@/lib/db";
 import { listInviteCodesAction } from "@/lib/actions/invite";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MembersSection } from "@/components/family/members-section";
 import { KitchenSection } from "@/components/family/kitchen-section";
@@ -21,13 +23,25 @@ export default async function FamilyPage() {
   ]);
 
   return (
-    <div className="container mx-auto max-w-4xl px-4 py-6">
-      <div className="space-y-1 mb-6">
-        <h1 className="text-2xl font-bold tracking-tight">{family.name}</h1>
-        <p className="text-sm text-muted-foreground">
-          完善家庭档案，让厨神推荐越来越准。
-        </p>
-      </div>
+    <div className="container mx-auto max-w-4xl px-4 py-6 space-y-6">
+      <Card className="overflow-hidden border-primary/20 bg-gradient-to-br from-primary/10 via-accent/40 to-background">
+        <CardContent className="flex items-center gap-4 p-5">
+          <div className="rounded-2xl bg-primary/15 text-primary p-3 shrink-0">
+            <Users className="size-6" />
+          </div>
+          <div className="space-y-0.5 min-w-0">
+            <h1 className="text-2xl font-bold tracking-tight truncate">
+              {family.name}
+              <span className="ml-2 text-sm font-normal text-muted-foreground">
+                · {family.members.length}口之家
+              </span>
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              完善家庭档案，让厨神推荐越来越准。
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
       <Tabs defaultValue="members">
         <TabsList className="grid w-full grid-cols-4 max-w-xl">

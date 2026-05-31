@@ -50,3 +50,10 @@ next-env.d.ts
 
 # prisma
 /prisma/migrations/dev.db*
+
+# capacitor / android (mobile 壳)
+# android/ 完全由 capacitor.config.ts 生成、无手改，整目录不入库（见 mobile/README.md 重建步骤）
+/mobile/node_modules
+/mobile/android
+/mobile/*.keystore
+/mobile/*.apk

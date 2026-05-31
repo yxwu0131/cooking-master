@@ -12,6 +12,7 @@ import {
   XCircle,
   CheckSquare,
   Square,
+  Layers,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -111,6 +112,9 @@ export function InventoryClient({
     const d = daysUntil(i.expiresAt);
     return d !== null && d <= 3;
   });
+
+  const refrigeratedCount = items.filter((i) => i.location === "REFRIGERATED").length;
+  const frozenCount = items.filter((i) => i.location === "FROZEN").length;
 
   const filteredIngredients = React.useMemo(() => {
     if (!searchTerm.trim()) return ingredients;
@@ -267,6 +271,20 @@ export function InventoryClient({
         </div>
       </div>
 
+      {items.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <StatTile icon={Layers} label="品类" value={`${grouped.size}`} tone="orange" />
+          <StatTile
+            icon={AlertTriangle}
+            label="即将过期"
+            value={`${expiringSoon.length}`}
+            tone={expiringSoon.length > 0 ? "amber" : "muted"}
+          />
+          <StatTile icon={Refrigerator} label="冷藏" value={`${refrigeratedCount}`} tone="blue" />
+          <StatTile icon={Snowflake} label="冷冻" value={`${frozenCount}`} tone="sky" />
+        </div>
+      )}
+
       {expiringSoon.length > 0 && (
         <Card className="border-amber-300 bg-amber-50/50 dark:bg-amber-950/20">
           <CardContent className="pt-4 pb-4 flex gap-3 items-start">
@@ -284,10 +302,13 @@ export function InventoryClient({
       )}
 
       {items.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground mb-4">
-              还没有库存。点击右上角「添加食材」开始录入。
+        <Card className="border-primary/15 bg-gradient-to-br from-primary/8 via-accent/40 to-background">
+          <CardContent className="py-12 text-center space-y-3">
+            <div className="inline-flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary mx-auto">
+              <Refrigerator className="size-6" />
+            </div>
+            <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+              还没有库存。录入家里有的食材，厨神会优先按现有食材推荐。
             </p>
             <Button onClick={() => setAddOpen(true)}>
               <Plus className="size-4" />
@@ -538,5 +559,37 @@ export function InventoryClient({
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+const TILE_TONES: Record<string, string> = {
+  orange: "bg-orange-100 text-orange-600 dark:bg-orange-500/15 dark:text-orange-300",
+  amber: "bg-amber-100 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300",
+  blue: "bg-sky-100 text-sky-600 dark:bg-sky-500/15 dark:text-sky-300",
+  sky: "bg-cyan-100 text-cyan-600 dark:bg-cyan-500/15 dark:text-cyan-300",
+  muted: "bg-muted text-muted-foreground",
+};
+
+function StatTile({
+  icon: Icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: string;
+  tone: keyof typeof TILE_TONES;
+}) {
+  return (
+    <Card>
+      <CardContent className="p-3">
+        <div className={cn("inline-flex size-8 items-center justify-center rounded-lg", TILE_TONES[tone])}>
+          <Icon className="size-4" />
+        </div>
+        <div className="mt-2 text-lg font-semibold leading-tight">{value}</div>
+        <div className="text-xs text-muted-foreground">{label}</div>
+      </CardContent>
+    </Card>
   );
 }

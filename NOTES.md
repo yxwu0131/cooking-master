@@ -487,3 +487,124 @@
 - 时间线顶部说明文案有处仍写「【三阶段】先切配→…」，但实际渲染就是两个模块（备菜+烹饪），属文案口径未对齐，非结构问题。
 - 本地点测在 `测试家`（test@cooking.local）这个一次性账号下进行；为登录临时把它的密码设为已知值（仅本地 DB）。点测产生的 2 个 session + 给骨架菜补的菜谱都留在本地库，无害。
 
+---
+
+## 2026-05-27 安卓 APK（Capacitor WebView 壳）
+
+> 把线上站点 `cook.dorianweb.com` 包成安卓 APK。选 **Capacitor WebView 壳** 而非 TWA：内容全走线上（更新零成本），日后可加原生插件（推送/相机/分享）。工程放隔离的 `mobile/` 子目录（自带 npm package.json，不碰主 app 的 pnpm 依赖树）。本批构建出 3.9MB debug APK，跑通。
+
+### 决策 29：安卓壳用 Capacitor，工程隔离在 `mobile/`，`android/` 不入库
+- **结构**：`mobile/{package.json,capacitor.config.ts,www/index.html,README.md}` 为版本库里的「真源」；`mobile/android/`（cap add android 生成的 Gradle 工程）**整目录 gitignore**——它 100% 由 `capacitor.config.ts` 生成、当前零手改，随时可 `npx cap add android` 重建。`mobile/` 也加进 `.dockerignore`（不进 web 镜像）。
+- **配置**：`appId=com.dorianweb.cooking`、`appName=厨神`、`server.url=https://cook.dorianweb.com`（Cloudflare 托管 HTTPS，`cleartext:false`）。`www/index.html` 只是加载/离线兜底页。
+- **为何用 npm 不用 pnpm**：mobile 是独立子项目，npm 装 Capacitor 无 pnpm 11 的 build-script 审批坑（坑3/16），最省事；`pnpm-workspace.yaml` 无 `packages:` glob，不会把 mobile 当 workspace 吞进去。
+- **重建+构建步骤**：见 `mobile/README.md`（含完整 env 变量 + 命令）。
+
+### 坑 29：Capacitor 7 强制 JDK 21，用 JDK 17 构建报「无效的源发行版：21」
+- **现象**：`gradlew assembleDebug` 在 `:capacitor-android:compileDebugJavaWithJavac` 失败：`错误: 无效的源发行版：21`（invalid source release: 21）。本机原只有 Adoptium **JDK 17**。
+- **根因**：Capacitor 7 的 android library 用 Java 21 source/target 编译，javac 17 编不了 source level 21。Capacitor 7（2025 初）起强制 JDK 21。
+- **解法**：装 Temurin **JDK 21**（zip 免管理员，解压到 `C:\Java\jdk-21.0.11+10`），构建前 `$env:JAVA_HOME` 指它。重跑 `assembleDebug` 2m46s BUILD SUCCESSFUL。Adoptium 直链：`https://api.adoptium.net/v3/binary/latest/21/ga/windows/x64/jdk/hotspot/normal/eclipse`。
+- **教训**：Capacitor 7 = JDK 21 起步。装新 major 的 Capacitor 先确认 JDK 版本要求。
+
+### 坑 30：headless 装 Android SDK——sdkmanager 许可/装包要用 Start-Process 重定向 stdin 喂 y
+- **背景**：无 Android Studio，只装 cmdline-tools（sdkmanager）headless 装 SDK。`%LOCALAPPDATA%\Android\Sdk\cmdline-tools\latest\`（注意必须是 `latest` 子目录，否则 sdkmanager 报 location 错）。
+- **现象**：PowerShell 里 `"y`n..." | & sdkmanager.bat --licenses` **喂不进去**——.bat 转调 java 读 stdin，管道 y 被忽略，仍停在「Review licenses (y/N)?」。
+- **解法**：写一个 50 行 `y` 的文件，用 `Start-Process -RedirectStandardInput $yfile -RedirectStandardOutput ... -Wait`。许可全 accept（exit 0），再同样方式 `sdkmanager platform-tools "platforms;android-35" "build-tools;35.0.0"`。Capacitor 7 需 compileSdk/targetSdk **35**、build-tools **35.0.0**、minSdk 23（见 `mobile/android/variables.gradle`）。
+- **教训**：Windows 上给 native .bat/exe 喂交互输入，PowerShell 管道常失效，用 `Start-Process -RedirectStandardInput <file>` 最稳（NOTES 多处「喂 y」场景通用）。
+
+### 决策 30：先出 debug APK，图标/启动图/release 签名留待 UI 美化阶段
+- debug APK（`mobile/android/app/build/outputs/apk/debug/app-debug.apk`，约 4MB）用 debug keystore 自签，可直接侧载家人手机（开「允许未知来源」）。已复制一份到 `mobile/厨神-debug.apk`。
+- **待办**：① App 图标+启动图还是 Capacitor 默认——放张源图用 `npx @capacitor/assets generate --android` 一键生成各密度再重 build；② 长期分发建 release keystore 出签名包。两项都并入 UI 美化阶段。
+- **未做**：APK 未在真机实测（无设备）；需用户装一次确认能开、能登录、WebView 正常。
+
+### 坑 31：移动端底部导航被顶到屏幕最上方——`backdrop-filter` 祖先成了 `fixed` 子元素的包含块
+- **现象**：家人装 APK 后反馈「顶部的标签太高、顶到屏幕顶部、不好按」。实测手机视口下，本该 `fixed bottom-0` 钉在屏幕底部的 5 格移动端导航，`getBoundingClientRect()` 是 `top=3 bottom=64`——整条贴在屏幕最上方、压着状态栏。
+- **根因**：该 `<nav fixed bottom-0>` 嵌在 `<header>` 里，而 header 带 `backdrop-blur-md`（=`backdrop-filter`）。**CSS 规范：祖先一旦有 `filter`/`backdrop-filter`/`transform`/`perspective` 等，就会成为后代 `position:fixed` 的包含块**（不再相对视口）。于是 `bottom-0` 是相对仅 65px 高的 header 底边定位 → 导航被顶到屏幕顶部。在桌面端因 `md:hidden` 该 nav 不显示，所以一直没暴露。
+- **解法**：把移动端底部 `<nav>` 移出 `<header>`，作为兄弟节点（组件 return 用 `<>…</>` 包 header + nav）。移出后 `fixed bottom-0` 相对视口定位，`rect` 回到 `top=783 bottom=844`（844 视口），正确钉底。改 `components/app-nav.tsx`。
+- **顺带**：viewport 加 `viewportFit:"cover"`（`app/layout.tsx`）+ header 加 `pt-[env(safe-area-inset-top)]`，让 Android 15（SDK35）edge-to-edge 下顶栏避开状态栏/刘海；底栏原有的 `pb-[env(safe-area-inset-bottom)]` 这次才真正生效（之前没 cover，env() 恒为 0）。
+- **教训**：凡 `fixed` 元素位置不对，先查它**所有祖先**有没有 `transform/filter/backdrop-filter/will-change/contain:layout|paint|strict`——任一都会劫持 fixed 的定位基准。毛玻璃顶栏 + 内嵌 fixed 底栏是高频组合陷阱。
+
+### 决策 31：菜品成品图功能（本地存储 + Bing 抓图 + 按名哈希，便于上 prod）
+- **目标**：App 主流化——点菜/菜单/详情有成品图更直观。`Dish.imageUrl`（schema 早留）启用。
+- **存储**：本地卷，不用 Supabase（实际没配 + supabase.co 国内手机加载不稳）。`IMAGES_DIR=./data/images`，新增服务路由 `app/api/img/[...path]/route.ts`（防穿越 + 缓存头），走 cloudflared 隧道。prod compose **早已备好** `IMAGES_DIR=/app/data/images` + 卷 `./data/images:/app/data/images`。
+- **来源**：`scripts/fetch-dish-images.ts` 抓 Bing 图片（查询词 `{name} 美食`，不要用 `成品`——会带出海报/风景等非食物图）。`fetchImage` 只收 jpeg/png/webp、6KB–6MB。
+- **关键：文件名按【菜名 sha1 前16位】命名，不用 cuid**——dish.name 是 @unique 跨库稳定，而 cuid 各库不同。这样本地抓的图能直接搬 prod。imageUrl 形如 `/api/img/dish/<sha1>.jpg`。
+- **渲染**：`components/dish-image.tsx`（有图显图、无图/onError 降级菜系 emoji）。已接入：菜品库列表缩略图、菜品详情大图 banner、做饭确认页菜品卡片网格、菜单编辑/点菜选择器缩略图。
+- **上 prod 步骤**（部署时）：① 推代码；② 把本地 `data/images/dish/*` 拷到 NAS 同路径（卷已挂）；③ 对 prod 库跑 `--relink`（不联网，按菜名 sha1 匹配磁盘文件、写回 imageUrl）：`node --env-file=.env ...tsx... scripts/fetch-dish-images.ts --relink`。
+- **已知**：自动首图约 5/300 抓不到（降级 emoji），且部分图不够准（家人以后可实拍覆盖，覆盖功能未做）。sharp 非本项目直接依赖（Next 自带），脚本不重编码，交付由 next/image 优化。
+
+### 坑 32：图片文件名若用 cuid 则无法搬到 prod（dish ID 跨库不一致）
+- 本地 dev 库与 prod 库各自 seed，`Dish.id`(cuid) 不同；若 imageUrl 用 `/api/img/dish/<cuid>.jpg`，把图和 DB 值搬到 prod 会全部对不上。
+- 解法：文件名用**菜名的 sha1**（name 是 @unique，跨库稳定）。配 `--relink` 模式，部署后对 prod 库按名重连 imageUrl。第一版误用了 cuid，已重构 + 清库重抓。
+
+### 本批顺手清的两个非阻断观察（UI）
+- 采购清单 + 推荐「需买」里 quantity=0 的调料：`session-workspace.tsx` 两处由「盐 0」改判 `quantity>0 ? \`${q} ${unit}\` : "适量"`。tsc 过。
+- 「三阶段」文案观察：全仓 grep 无「三阶段/先切配」残留——早在时间线两阶段重构时已清除，无需再改。
+
+---
+
+## 2026-05-28 体验反馈两轮：图片回退 emoji + 重复菜清理 + 骨架菜按需 AI 补谱
+
+### 坑 33：Bing 抓的菜品成品图质量参差，用户体感「有点可怕」→ 整体回退到 emoji 卡通头像
+- **现象**：决策31上线后家人体感反馈「图片有点可怕」。抽样查的确：歧义菜名抓到海报/水印图（红烧肉=会议截图、虾系列误中海鲜店招牌）、湿菜/汤类经常拍得近镜糊脸、~60% 命中率内还混了不少非家常呈现，整体不如原来的菜系 emoji 头像（决策23）让人有食欲。
+- **解法（不丢资产）**：① `UPDATE Dish SET imageUrl = NULL`（all 312 道）→ `DishImage` 已有降级逻辑，自动回退到 `dishEmoji(cuisine, isSoup, isVegetarian)` 卡通色块。② 物理图片 `data/images/dish/*`（311 张）**保留**，便于以后再尝试。③ 抓图脚本/路由/选图后台页 `/dishes/images`/`DishImage` 组件**全部留着不删**，下次重启用只需重新抓+`--relink`。
+- **未来再做**：如果再上图，先解决质量门槛——人工挑+实拍优先（用 `/dishes/images` 后台一张张过），自动抓只做兜底；或换图源（小红书/下厨房的菜品 API，需调研）。低质量自动图不如 emoji。
+- **教训**：「图片功能」≠「图片质量」。Bing 图搜对菜名歧义+防盗链+艺术化呈现的鲁棒性远不够当产品图源。下次上图前先抽样 30 张盲评通过再大规模抓。
+
+#### 2026-05-31 补：30 张盲评做了，命中率 6.7%，且混进一张 NSFW —— 结论硬化为「不可用，建议删库」
+- **做法**：对 `data/images/dish/`（311 张）按 sha1 文件名反解菜名（用 seed.ts 全部 name 算 sha1[:16] 反查，305/311 解出），等距抽 30 张，用 **Read 工具逐张渲染**（本环境 CDP screenshot 失效但 Read 能直接看图）人工评「是否该菜的、可上架质量的成品图」。
+- **结果**：**仅 2/30 ≈ 6.7%** 是对的菜的成品图（韭菜盒子、包子），且**两张都带图库水印**（nipic/699pic）→ 干净可上架的实际 **0/30**。门槛是 >85%，惨败，远比坑33 当时估的「~60%」还差（那个估计太乐观，或这批是改进查询前的旧图）。
+- **错图分布**：6 张是**生食材**而非成品（土豆/葱/莴笋/酱油/蒜×2 —— 菜名含食材词就抓了原料）；~21 张完全无关（棒球赛/半导体工艺图/概念车/油画/毛泽东/达赖/潜水器宣传海报/游戏聚合页/洗衣机/公寓楼/电影 credits/书法「白」字…）；**1 张 NSFW（清炒虾仁 → 沙滩裸女）**。
+- 🚨 **安全隐患**：NSFW 那张当前不被引用（imageUrl 全 NULL），但**留在磁盘上**，谁要在 dev 或 **prod** 跑 `--relink` 就会把它（及一堆垃圾图）当成品图喂给家人。坑33 说「图保留便于以后再尝试」的前提（图是资产）被推翻——这批自动抓的图是**负资产**，88MB 里 93% 垃圾 + 含 NSFW。
+- **处理（2026-05-31 用户拍板「整个删掉」已执行）**：① `rm -rf data/images/dish`（311 张 88MB）+ `data/images/_cand`（候选缓存 1.2MB）全删，`data/images/` 现为空。本地操作，`data/` 是 gitignore、不在 prod，零仓库/生产影响。② **基础设施保留**（抓图脚本 `scripts/fetch-dish-images.ts`/`/api/img` 路由/`/dishes/images` 选图后台页/`DishImage` 组件 + emoji 降级）——将来上图只能走**人工挑选 / 实拍 / 正经食材 API**，绝不能再用 Bing 自动抓当图源。③ 抓图脚本若将来重启用，应加：拒绝带常见图库水印域名、菜名含纯食材词时跳过、NSFW 过滤——但 ROI 低，不如直接人工。
+- **教训**：自动图搜当产品图源对中文菜名是**根本性不可行**（歧义 + 防盗链水印 + NSFW 泄漏 + 抓到原料/字形/同名实体）。这类「内容质量」需求别指望通用搜索兜底；要么人工，要么垂直食谱 API。盲评用 Read 工具看图这条**在本环境可行且高效**（30 张分 3 批读完即出结论）。
+
+### 决策 32：骨架菜「按需补菜谱」+ 后台批量补一次性兜底
+- **痛点**：扩库的 238 道骨架菜（`DISH_SKELETONS`，决策22）原本只有元数据无菜谱，靠确认菜单时 `ensure-recipes.ts` 触发 AI 补。**后果**：用户在菜品库点详情，点到骨架菜只看到「这道菜还没有做法」，体验破。
+- **解法**：① 详情页 `dish-recipe-view.tsx` 空状态加「让 AI 生成做法」按钮（暖色渐变卡 + Sparkles 主按钮 + 手动添加 outline 按钮），新增 server action `generateDishRecipeAction(dishId)` 复用 `ensure-recipes.ts` 同款 AI 调用路径。② 一次性兜底脚本 `scripts/bulk-fill-recipes.ts`：扫描 `recipe: null` 的菜 → 逐道调 `generateRecipe` → 写回 `prisma.dish.update + recipe.create`，失败跳过不阻塞、输出到 `data/bulk-fill-progress.log` 看板（每行：`[N/total] 菜名 ... ok 9.3s`）。
+- **批量补成本**：deepseek-chat ~9s/道 × 242 道 ≈ 40 分钟单线程跑完，token 总费用 < $1。完成后用户「灵感库新菜」走原有 `parseWishToDishAction`（决策19），不再需要兜底；新加的菜如果走骨架途径，详情页按钮兜底。
+- **数据一致性**：脚本写时不传 `availableSeasonings`/口味 flags（全库共享 Dish.recipe，不该按某个家庭口味偏置），用通用家常思路出。后续家庭确认菜单时 `ensure-recipes.ts` 仍按家庭口味二次定制只发生在「该菜原本没菜谱」的情况，本次跑完后 ensure-recipes 几乎不再触发，省钱。
+
+### 决策 33：菜品重复清理（按"换部位/换主食=同一道菜"准则）
+- **触发**：用户体感看到「2 个可乐鸡翅」（实为 可乐鸡翅 + 可乐鸡腿，schema @unique 不可能真同名）。明确准则：**原材料换部位 / 同菜+主食盖饭 = 同一道菜**，要合并。
+- **筛查脚本一次性**：用 `Dish.findMany` + 双层循环按子串+长度差≤2 找近似名，得 10 对候选，按准则人工裁决：
+  - **同一道菜（删后者）**：可乐鸡腿、蚝油生菜心、口水鸡丝、麻婆豆腐盖饭、宫保鸡丁盖饭、黄焖鸡米饭
+  - **不同菜（保留）**：笋干红烧肉 vs 红烧肉（加主料）、咸肉冬瓜汤 vs 冬瓜汤（加咸肉）、日式咖喱鸡 vs 咖喱鸡（菜系不同）、腊味煲仔饭 vs 煲仔饭（加腊味）、蒜苗回锅肉 vs 回锅肉（加蒜苗）
+- **删除路径**：FK 注意 `FamilyDish.dishId`/`MenuDish.dishId`/`Wish.parsedDishId`/`Feedback.dishId`。schema 里这些都是简单 onDelete=NoAction，**先 reassign 引用到保留菜（如果用户已 LOVED 可乐鸡腿）再 delete**。本次 dev 库无引用，直接 delete 6 条。
+- **教训**：seed 扩库（决策22）批量添加时没做近似检测，单纯依赖 `@unique` 防同名是不够的；下次扩库前应该跑一遍"按主料+做法"的去重器。也可以考虑给 Dish 加 canonical_key 字段（去掉「米饭」「盖饭」「丝」后缀+部位归一）。
+
+---
+
+## 2026-05-30 App 图标 + 启动图（Capacitor 自适应图标）
+
+### 决策 34：App 图标/启动图复用品牌 logo（白色 ChefHat + 番茄橙），SVG→sharp→@capacitor/assets
+- **设计**：直接复刻 app-nav 的 logo 徽章（白色 lucide ChefHat 描边 + 番茄橙圆角方），不另造设计——保持品牌一致。主色 `--primary oklch(0.65 0.18 42) ≈ #E56022`，图标用渐变 `#F2864A→#D9531F`；启动图浅色底 `#FCF9F2`（= `--background` 奶油）、深色底 `#241D18`（= 暗色 `--background`）。
+- **源文件管线**（入库在 `mobile/assets/`）：`gen-icon-sources.cjs` 用**主项目的 sharp**（mobile 子项目没装 sharp，require `../../node_modules/.pnpm/sharp@<v>/...`）把内联 SVG 光栅化成 `logo.png`(1024² 完整图标) + `icon-foreground.png`(1024² 透明白帽)。再 `npx @capacitor/assets generate --android --iconBackgroundColor #E56022 ... --splashBackgroundColor #FCF9F2 --splashBackgroundColorDark #241D18` 出 92 个密度产物。
+- **为何不用 SVG 直接喂 @capacitor/assets**：该工具要 PNG 源（≥1024²），不吃 SVG；自己用 sharp 先栅格化。oklch 颜色 librsvg/resvg 不认，SVG 里一律用 hex。
+- **帽尺寸调参**：前景 SVG 用 `scale(40)`（帽高约画布 70%），叠加 adaptive-icon 的 16.7% inset 后可见帽约 60%，符合标准自适应图标观感。第一版用 scale(30) 偏小，调大到与 logo 一致。
+- **验证**：用 Read 工具直接看生成的 PNG（本环境 CDP screenshot 失效但 Read 能渲染图片）——legacy `ic_launcher.png`、圆形遮罩模拟、浅/深启动图四类均 OK。`assembleDebug` 28s 成功，APK 4.7MB（比无图标的 3.9MB 大）。**未真机实测图标**（无设备）。
+- 产物 `mobile/android/`、`*.apk` 都 gitignore；入库的是 `mobile/assets/{logo.png,icon-foreground.png,gen-icon-sources.cjs}`，重建后照 README 重跑生成 + 坑34 修正。
+
+### 坑 34：@capacitor/assets 给纯色背景套 16.7% inset，自适应图标圆形遮罩下四角透明
+- **现象**：`@capacitor/assets generate --android --iconBackgroundColor #E56022` 生成的 `mipmap-anydpi-v26/ic_launcher.xml` 把**背景**也包进 `<inset android:drawable="@mipmap/ic_launcher_background" android:inset="16.7%" />`。背景 PNG 本是全幅纯橙方块（432px=108dp），被 inset 16.7% 后只占内圈 66%（≈72dp），外圈一圈透明。
+- **影响**：自适应图标的背景层本应**全幅铺满**（外圈区域是给各家启动器遮罩/视差用的）。背景被 inset 后，启动器用圆形/squircle 遮罩（可超出 72dp 安全区）渲染时，图标四角/边缘会露出透明 → 桌面上看到缺角的橙圆。前景该 inset（缩进安全区），背景不该。
+- **解法**：把两个 `ic_launcher.xml` / `ic_launcher_round.xml` 的 `<background>` 改回纯色全幅（去 inset）：`<background android:drawable="@mipmap/ic_launcher_background" />`。前景的 16.7% inset 保留。改完模拟圆形遮罩（sharp 合成 bg+前景 inset 后 dest-in 圆形 mask）确认四角满橙、无透明。
+- **注意**：`mobile/android/` 整目录 gitignore，这个修正每次 `npx cap add android` + `@capacitor/assets generate` 重建后都要重做（已写进 `mobile/assets/gen-icon-sources.cjs` 头注释 step 3 + README）。
+- **教训**：@capacitor/assets 的自适应图标默认模板对纯色背景套 inset 是个坑；凡用纯色/全幅背景，生成后检查 adaptive-icon xml 的 `<background>` 有没有被 inset，有就去掉。跨项目通用（任何 Capacitor/Android 自适应图标）。
+
+---
+
+## 2026-05-31 推 main 前深度评测 + 5 项硬化修复
+
+### 决策 35：推 main 前用多 agent 工作流做了一轮深度评测，按结论修了 5 类问题
+- **评测方式**：8 维度并行审查（安全/规划正确性/未提交UI/AI健壮性/数据性能/schema/UX/技术债）+ 每条发现派对抗式 skeptic 复核（57 agent，46 确认/3 证伪），主线程再亲自 ground-truth 关键项。报告全文见会话；要点：工程质量扎实，**唯一推送前阻塞项 = 本次新增的实时 Bing 抓图后台页**（SSRF + NSFW，公网可达）。
+- **顺带 ground-truth 出一条根因放大器**：`auth.ts:registerAction` 的 mode 只看表单有没有 inviteCode——**无邀请码即建新家庭 + role:ADMIN + 自动登录**，且 `/register` 不在 `auth.config.ts` 保护列表、站点公网域 → **任何网友可自助注册成 ADMIN**（prod 现存行为，非本次引入）。这推翻了多条复核「只有 5 个可信家人」的降级前提。
+- **本次落地的 5 项修复**（tsc 全过）：
+  1. **下线实时抓图入口**：删 `app/(app)/dishes/page.tsx` 的「配图」链接 + 连带 Button/Link/ImagePlus import；`getDishImageCandidatesAction` 加 `ENABLE_DISH_IMAGE_FETCH!=="1"` 开关（默认关，返回「自动抓图已停用，请改用上传照片」）。`uploadDishImageAction`（人工上传，有类型/大小校验）不受影响。
+  2. **堵开放注册**：`registerAction` 对 `mode:"new"` 加 `ALLOW_OPEN_REGISTRATION!=="1"` 闸（默认关，返回「自助创建家庭已关闭，请用邀请码加入」）。邀请码加入路径不受影响。
+  3. **AI 默认模型**：`deepseek.ts` 兜底 `deepseek-v4-pro`→`deepseek-chat`；`.env.example` 同步改 + 新增两个开关变量注释。
+  4. **去重**：从 `seed.ts` DISH_SKELETONS 删 6 道重复菜（可乐鸡腿/蚝油生菜心/口水鸡丝/麻婆豆腐盖饭/宫保鸡丁盖饭/黄焖鸡米饭）——seed 不再 upsert 复活；保留菜（可乐鸡翅/蚝油生菜/口水鸡/麻婆豆腐/宫保鸡丁/黄焖鸡）原样在。
+  5. **顺手 5 小修**：① AI 菜单 MenuDish 落库补 `servings: eaterAdults+eaterKids`（原恒为默认 2，采购/备菜量与人数脱节）；② `menuPlanSchema.estimatedMinutes/difficulty` 改 flexNum（历史「适量/越界」坑同类，LIVE 推荐路径）；③ `finishCookingAction` 加 `status==="COOKING"` 状态机校验（防重复完成致 cookCount 重复 +1）；④ ~~`updateDishRecipeAction` 限 ADMIN~~ → 评估后**撤销**：自助注册已默认关闭，家庭成员均可编辑做法（保持决策20「人人可编辑」语义）；菜谱写操作仍只对已登录家庭成员开放；⑤ 抽 `lib/ai/error-message.ts` 共用 `mapAIErrorToChinese`，`parseWishToDish`/`generateDishRecipe` 的 catch 不再把原始 Error.message 弹给用户。
+- **新增环境开关**（两者默认关 = 安全；公网部署保持关）：`ALLOW_OPEN_REGISTRATION`（=1 才允许自助建家庭，仅本地引导首个家庭用）、`ENABLE_DISH_IMAGE_FETCH`（=1 才启用换图实时抓图）。
+- **上 prod 注意**：seed 已不含那 6 道，但 **prod 库存量仍在**，需部署后对这 6 个 name 跑一次 `deleteMany`（有 FamilyDish/MenuDish/Wish/Feedback 引用则先 reassign 到保留菜；prod 多半无引用可直接删）才彻底清掉，删完不会被 seed 复活。
+- **未做（评测里确认存在、低优先，记账）**：AI 调用零重试、`Dish.canonicalKey` 去重字段、`MenuDish.dish` 缺 onDelete、采购常备调料别名归一、蒸锅占灶漏报、emoji 降级缺 sr-only、两处缺索引、UX/a11y 维度（工作流里那个 review agent 卡 schema 重试没跑完，仅做了图片那条快查）。详见会话报告。
+

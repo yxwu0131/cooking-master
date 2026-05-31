@@ -1,0 +1,19 @@
+{
+  "name": "cooking-master-mobile",
+  "version": "1.0.0",
+  "private": true,
+  "description": "厨神 安卓壳（Capacitor WebView，内容走线上 cook.dorianweb.com）",
+  "scripts": {
+    "sync": "cap sync android",
+    "open": "cap open android",
+    "build:debug": "cap sync android && cd android && gradlew.bat assembleDebug",
+    "build:release": "cap sync android && cd android && gradlew.bat assembleRelease"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/core": "^7.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.0.0"
+  }
+}

@@ -48,6 +48,7 @@ import {
 import { cn } from "@/lib/utils";
 import { formatLocal, formatTime } from "@/lib/format";
 import { FeedbackSection } from "@/components/cook/feedback-section";
+import { DishImage } from "@/components/dish-image";
 import type { PrepPlan, PrepGroup } from "@/lib/planning/prep-consolidation";
 
 type Session = {
@@ -93,6 +94,7 @@ type Session = {
         totalMinutes: number;
         isSoup: boolean;
         isStaple: boolean;
+        imageUrl: string | null;
         recipe: {
           ingredients: unknown;
           seasonings: unknown;
@@ -156,6 +158,7 @@ type DishMeta = {
   isStaple: boolean;
   isVegetarian: boolean;
   isChildFriendly: boolean;
+  imageUrl: string | null;
 };
 
 const MEAL_TYPE_LABEL: Record<string, string> = {
@@ -563,7 +566,7 @@ function DraftPlansSection({
                       )}
                       {missing && missing.length > 0 && (
                         <div className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
-                          需买：{missing.map((m) => `${m.name} ${m.quantity}${m.unit}`).join("、")}
+                          需买：{missing.map((m) => (m.quantity > 0 ? `${m.name} ${m.quantity}${m.unit}` : `${m.name} 适量`)).join("、")}
                         </div>
                       )}
                     </div>
@@ -680,7 +683,15 @@ function EditingMenuSection({
               key={d.id}
               className="flex items-center justify-between rounded-md border px-3 py-2 text-sm"
             >
-              <div className="flex items-center gap-2 flex-1 min-w-0">
+              <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                <DishImage
+                  imageUrl={d.dish?.imageUrl}
+                  name={d.dishNameSnapshot}
+                  cuisine={d.dish?.cuisine}
+                  isSoup={d.dish?.isSoup}
+                  className="size-9 rounded-lg text-lg"
+                  sizes="36px"
+                />
                 <span className="truncate">{d.dishNameSnapshot}</span>
               </div>
               {isChef && (
@@ -735,11 +746,20 @@ function EditingMenuSection({
                       type="button"
                       onClick={() => addDish(d.id)}
                       disabled={pending}
-                      className="w-full text-left rounded px-2 py-1.5 text-sm hover:bg-accent flex items-center justify-between gap-2"
+                      className="w-full text-left rounded px-2 py-1.5 text-sm hover:bg-accent flex items-center gap-2.5"
                     >
-                      <span>{d.name}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {d.cuisine ?? "家常"} · {d.totalMinutes}分钟 · 难{d.difficulty}
+                      <DishImage
+                        imageUrl={d.imageUrl}
+                        name={d.name}
+                        cuisine={d.cuisine}
+                        isSoup={d.isSoup}
+                        isVegetarian={d.isVegetarian}
+                        className="size-9 rounded-lg text-lg"
+                        sizes="36px"
+                      />
+                      <span className="flex-1 min-w-0 truncate">{d.name}</span>
+                      <span className="text-xs text-muted-foreground shrink-0">
+                        {d.cuisine ?? "家常"} · {d.totalMinutes}分钟
                       </span>
                     </button>
                   ))}
@@ -800,11 +820,21 @@ function ConfirmedMenuView({
               已确认菜单 · {menu.tag ?? STRATEGY_LABEL[menu.strategy]}
             </h2>
           </div>
-          <div className="flex flex-wrap gap-2 text-sm">
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
             {menu.dishes.map((d) => (
-              <Badge key={d.id} className="text-sm py-1 px-3">
-                {d.dishNameSnapshot}
-              </Badge>
+              <div key={d.id} className="space-y-1.5">
+                <DishImage
+                  imageUrl={d.dish?.imageUrl}
+                  name={d.dishNameSnapshot}
+                  cuisine={d.dish?.cuisine}
+                  isSoup={d.dish?.isSoup}
+                  className="w-full aspect-square rounded-xl text-3xl shadow-sm"
+                  sizes="(max-width: 768px) 30vw, 120px"
+                />
+                <p className="text-xs text-center leading-tight line-clamp-2">
+                  {d.dishNameSnapshot}
+                </p>
+              </div>
             ))}
           </div>
           <div className="flex gap-2 pt-1">
@@ -1257,7 +1287,7 @@ function ShoppingListView({ list }: { list: Session["menus"][number]["shoppingLi
                           )}
                         </div>
                         <span className="text-muted-foreground">
-                          {item.quantity} {item.unit}
+                          {item.quantity > 0 ? `${item.quantity} ${item.unit}` : "适量"}
                         </span>
                       </li>
                     ))}

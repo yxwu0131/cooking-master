@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>厨神</title>
+    <style>
+      :root { color-scheme: light; }
+      html, body {
+        margin: 0;
+        height: 100%;
+        background: #fff7ed;
+        color: #7c2d12;
+        font-family: system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+      }
+      .wrap {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        text-align: center;
+        padding: 24px;
+      }
+      .logo { font-size: 64px; }
+      .title { font-size: 22px; font-weight: 700; }
+      .hint { font-size: 14px; color: #9a3412; opacity: 0.8; }
+      .spinner {
+        width: 28px; height: 28px;
+        border: 3px solid #fed7aa;
+        border-top-color: #ea580c;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+  </head>
+  <body>
+    <!-- server.url 指向线上站点时，此页几乎不会被看到；仅在加载线上内容前的一瞬或离线时作为兜底。 -->
+    <div class="wrap">
+      <div class="logo">🍳</div>
+      <div class="title">厨神</div>
+      <div class="spinner"></div>
+      <div class="hint">正在加载…<br />若长时间无响应，请检查网络后重开</div>
+    </div>
+  </body>
+</html>

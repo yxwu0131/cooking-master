@@ -11,6 +11,9 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
+  // App（Capacitor/Android 15 edge-to-edge）下让内容延伸到状态栏/刘海区，
+  // 配合各处 env(safe-area-inset-*) 让顶/底栏避开系统区域。
+  viewportFit: "cover",
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
     { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },

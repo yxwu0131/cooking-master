@@ -59,6 +59,12 @@ export async function registerAction(formData: FormData): Promise<ActionResult> 
       fieldErrors: parsed.error.flatten().fieldErrors,
     };
   }
+  // 自助创建新家庭默认关闭（公网部署防陌生人注册成 ADMIN）；加家人请用邀请码。
+  // 需要开放自助建家庭（如本地初始化/首个家庭引导）时设 ALLOW_OPEN_REGISTRATION=1。
+  if (parsed.data.mode === "new" && process.env.ALLOW_OPEN_REGISTRATION !== "1") {
+    return { ok: false, error: "自助创建家庭已关闭，请使用家人的邀请码加入" };
+  }
+
   const { email, password, name } = parsed.data;
   const normalizedEmail = email.toLowerCase();
 

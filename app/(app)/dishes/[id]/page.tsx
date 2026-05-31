@@ -54,6 +54,7 @@ export default async function DishDetailPage({
         dish={{
           id: dish.id,
           name: dish.name,
+          imageUrl: dish.imageUrl,
           cuisine: dish.cuisine,
           difficulty: dish.difficulty,
           totalMinutes: dish.totalMinutes,
